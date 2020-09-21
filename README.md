@@ -1,4 +1,5 @@
 # Polyps-Segmentation
+proper documentation comming soon.
 
 ## Dataset source
 * [Polyp grand challenge](https://polyp.grand-challenge.org/EtisLarib/)
