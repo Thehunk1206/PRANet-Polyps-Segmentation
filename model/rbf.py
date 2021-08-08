@@ -66,14 +66,14 @@ class RFB(tf.keras.layers.Layer):
 
         self.relu = tf.keras.layers.ReLU()
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: tf.Tensor):
         x1 = self.branch_1(inputs)
         x2 = self.branch_2(inputs)
         x3 = self.branch_3(inputs)
         x4 = self.branch_4(inputs)
         x_res = self.shortcut_branch(inputs)
 
-        x_con = tf.concat([x1, x2, x3, x4],axis=-1)
+        x_con = tf.concat([x1, x2, x3, x4], axis=-1)
 
         x_concat_conv = self.concate_branch(x_con)
 
@@ -90,6 +90,8 @@ class RFB(tf.keras.layers.Layer):
     def from_config(cls, config):
         return super().from_config(**config)
 
+
+# test the module
 if __name__ == "__main__":
     rfb = RFB(32)
     # first call to the `rfb` will create weights

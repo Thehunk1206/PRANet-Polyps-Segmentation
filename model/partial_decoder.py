@@ -22,13 +22,70 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
 
-import os
-import sys
 
 import tensorflow as tf
+from conv_module import ConvModule
+
 
 class PartialDecoder(tf.keras.layers.Layer):
-    def __init__(self, trainable, name, dtype, dynamic, **kwargs):
-        super().__init__(trainable=trainable, name=name, dtype=dtype, dynamic=dynamic, **kwargs)
+    def __init__(self, filters: int):
+        super(PartialDecoder, self).__init__()
+        self.filters = filters
 
+        self.upsampling = tf.keras.layers.UpSampling2D(
+            size=(2, 2), interpolation='bilinear')
+        self.conv_up1 = ConvModule(filters=filters, kernel_size=(3, 3))
+        self.conv_up2 = ConvModule(filters=filters, kernel_size=(3, 3))
+        self.conv_up3 = ConvModule(filters=filters, kernel_size=(3, 3))
+        self.conv_up4 = ConvModule(filters=filters, kernel_size=(3, 3))
+        self.conv_up5 = ConvModule(filters=2*filters, kernel_size=(3, 3))
+
+        self.conv_concat_1 = ConvModule(filters=2*filters, kernel_size=(3, 3))
+        self.conv_concat_2 = ConvModule(filters=3*filters, kernel_size=(3, 3))
+
+        self.conv4 = ConvModule(filters=3*filters, kernel_size=(3, 3))
+        self.conv5 = tf.keras.layers.Conv2D(filters=1, kernel_size=(1, 1))
+
+    def call(self, feat1: tf.Tensor, feat2: tf.Tensor, feat3: tf.Tensor):
+        x1_1 = feat1
+        x2_1 = self.conv_up1(self.upsampling(feat1)) * feat2
+        x3_1 = self.conv_up2(self.upsampling(self.upsampling(feat1)))  \
+            * self.conv_up3(self.upsampling(feat2)) * feat3
+
+        x2_2 = tf.concat([x2_1, self.conv_up4(
+            self.upsampling(x1_1))], axis=-1)
+        x2_2 = self.conv_concat_1(x2_2)
+
+        x3_2 = tf.concat([x3_1, self.conv_up5(self.upsampling(x2_2))], axis=-1)
+        x3_2 = self.conv_concat_2(x3_2)
+
+        x = self.conv4(x3_2)
+        x = self.conv5(x)
+
+        return x
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({"filters": self.filters})
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return super().from_config(**config)
+    
+
+
+# test the module
+if __name__ == "__main__":
+    ppd = PartialDecoder(32)
+    # first call to the `ppd` will create weights
+    feat3 = tf.ones(shape=(8, 44, 44, 32))
+    feat2 = tf.ones(shape=(8, 22, 22, 32))
+    feat1 = tf.ones(shape=(8, 11, 11, 32))
+    y = ppd(feat1,feat2,feat3)
+
+    print("weights:", len(ppd.weights))
+    print("trainable weights:", len(ppd.trainable_weights))
+    print("config:", ppd.get_config())
+    print(f"Y: {y.shape}")
 
