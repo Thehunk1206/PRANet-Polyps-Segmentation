@@ -106,17 +106,6 @@ class TfdataPipeline:
 
         return dataset
 
-    # @tf.function
-    # def __tf_dataset_mask(self, mask_path: str):
-    #     dataset = tf.data.Dataset.from_tensor_slices(mask_path)
-    #     # dataset = dataset.shuffle(buffer_size=self.batch_size*2)
-    #     dataset = dataset.map(
-    #         self.__read_mask, num_parallel_calls=tf.data.AUTOTUNE)
-    #     dataset = dataset.batch(batch_size=self.batch_size)
-
-    #     dataset = dataset.cache().prefetch(tf.data.AUTOTUNE)
-
-    #     return dataset
 
     def data_loader(self, dataset_type: str = 'train'):
         if dataset_type not in self.__datasettype:

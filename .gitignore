@@ -1,2 +1,5 @@
 logs/
 polyps_dataset/
+sampleImages/
+Trained model/
+__pycache__/
