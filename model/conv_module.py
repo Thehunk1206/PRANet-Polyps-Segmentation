@@ -29,7 +29,7 @@ class ConvModule(tf.keras.layers.Layer):
     def __init__(
         self, filters: int,
         kernel_size: tuple,
-        strides: tuple=(1,1),
+        strides: tuple = (1, 1),
         padding: str = "same",
         dilation_rate: tuple = (1, 1),
     ):
@@ -52,7 +52,7 @@ class ConvModule(tf.keras.layers.Layer):
 
         self.relu = tf.keras.layers.ReLU()
 
-    def call(self, x, training: bool = False):
+    def call(self, x: tf.Tensor, training: bool = False):
         x = self.conv(x)
         x = self.bn(x, training=training)
         x = self.relu(x)
@@ -75,6 +75,7 @@ class ConvModule(tf.keras.layers.Layer):
         return cls(**config)
 
 
+# test the module
 if __name__ == "__main__":
     cm = ConvModule(96, (1, 3), (1, 1))
     # first call to the `cm` will create weights

@@ -3,3 +3,4 @@ polyps_dataset/
 sampleImages/
 Trained model/
 __pycache__/
+.ipynb_checkpoints/

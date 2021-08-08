@@ -56,16 +56,16 @@ class FE_backbone():
 
         return fe_backbone_model
 
-
-# if __name__ == "__main__":
-    # fe_resnet = FE_backbone()
-    # model = fe_resnet.get_fe_backbone()
-    # print(model.output)
-    # image_raw = tf.io.read_file('polyps_dataset/images/cju0qkwl35piu0993l0dewei2.jpg')
-    # image = tf.image.decode_jpeg(image_raw,channels=3)
-    # image = tf.image.resize(image,[352,352])
-    # image = tf.cast(image, dtype=tf.float32)
-    # image = image/255.0
-    # image = tf.expand_dims(image, axis=0)
-    # side_features = model(image)
-    # side_features1,side_features2,side_features3 = side_features[0], side_features[1],side_features[2]
+#test the module
+if __name__ == "__main__":
+    fe_resnet = FE_backbone()
+    model = fe_resnet.get_fe_backbone()
+    print(model.output)
+    image_raw = tf.io.read_file('polyps_dataset/images/cju0qkwl35piu0993l0dewei2.jpg')
+    image = tf.image.decode_jpeg(image_raw,channels=3)
+    image = tf.image.resize(image,[352,352])
+    image = tf.cast(image, dtype=tf.float32)
+    image = image/255.0
+    image = tf.expand_dims(image, axis=0)
+    side_features = model(image)
+    side_features1,side_features2,side_features3 = side_features[0], side_features[1],side_features[2]
