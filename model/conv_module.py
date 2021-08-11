@@ -52,14 +52,14 @@ class ConvModule(tf.keras.layers.Layer):
 
         self.relu = tf.keras.layers.ReLU()
 
-    def call(self, x: tf.Tensor, training: bool = False):
+    def call(self, x: tf.Tensor, training: bool = False) -> tf.Tensor:
         x = self.conv(x)
         x = self.bn(x, training=training)
         x = self.relu(x)
 
         return x
 
-    def get_config(self):
+    def get_config(self) -> dict:
         config = super(ConvModule, self).get_config()
         config.update({
             "filters": self.filters,

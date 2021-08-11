@@ -55,8 +55,9 @@ if __name__ == "__main__":
     model = FE_backbone(inshape=(image_size, image_size, 3)).get_fe_backbone()
     extracted_feature = get_features_of_image(
         path=sample_image_path, model=model)
-    for feat in extracted_feature[0]:
 
+    # https://www.analyticsvidhya.com/blog/2020/11/tutorial-how-to-visualize-feature-maps-directly-from-cnn-layers/ refer to this article
+    for feat in extracted_feature[0]:
         feat = tf.expand_dims(feat, axis=0)
         k = feat.shape[-1]
         size = feat.shape[1]

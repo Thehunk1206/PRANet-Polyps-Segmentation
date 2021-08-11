@@ -66,7 +66,7 @@ class RFB(tf.keras.layers.Layer):
 
         self.relu = tf.keras.layers.ReLU()
 
-    def call(self, inputs: tf.Tensor):
+    def call(self, inputs: tf.Tensor) -> tf.Tensor:
         x1 = self.branch_1(inputs)
         x2 = self.branch_2(inputs)
         x3 = self.branch_3(inputs)
@@ -81,7 +81,7 @@ class RFB(tf.keras.layers.Layer):
 
         return x
 
-    def get_config(self):
+    def get_config(self) -> dict:
         config = super().get_config()
         config.update({"filters": self.filters})
         return config

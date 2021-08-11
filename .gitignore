@@ -4,3 +4,4 @@ sampleImages/
 Trained model/
 __pycache__/
 .ipynb_checkpoints/
+Illustrations/*.drawio

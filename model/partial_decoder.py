@@ -46,11 +46,11 @@ class PartialDecoder(tf.keras.layers.Layer):
         self.conv4 = ConvModule(filters=3*filters, kernel_size=(3, 3))
         self.conv5 = tf.keras.layers.Conv2D(filters=1, kernel_size=(1, 1))
 
-    def call(self, feat1: tf.Tensor, feat2: tf.Tensor, feat3: tf.Tensor):
-        x1_1 = feat1
-        x2_1 = self.conv_up1(self.upsampling(feat1)) * feat2
-        x3_1 = self.conv_up2(self.upsampling(self.upsampling(feat1)))  \
-            * self.conv_up3(self.upsampling(feat2)) * feat3
+    def call(self, rfb_feat1: tf.Tensor, rfb_feat2: tf.Tensor, rfb_feat3: tf.Tensor) -> tf.Tensor:
+        x1_1 = rfb_feat1
+        x2_1 = self.conv_up1(self.upsampling(rfb_feat1)) * rfb_feat2
+        x3_1 = self.conv_up2(self.upsampling(self.upsampling(rfb_feat1)))  \
+            * self.conv_up3(self.upsampling(rfb_feat2)) * rfb_feat3
 
         x2_2 = tf.concat([x2_1, self.conv_up4(
             self.upsampling(x1_1))], axis=-1)
@@ -64,7 +64,7 @@ class PartialDecoder(tf.keras.layers.Layer):
 
         return x
 
-    def get_config(self):
+    def get_config(self) -> dict:
         config = super().get_config()
         config.update({"filters": self.filters})
         return config
@@ -72,7 +72,6 @@ class PartialDecoder(tf.keras.layers.Layer):
     @classmethod
     def from_config(cls, config):
         return super().from_config(**config)
-    
 
 
 # test the module
@@ -82,10 +81,8 @@ if __name__ == "__main__":
     feat3 = tf.ones(shape=(8, 44, 44, 32))
     feat2 = tf.ones(shape=(8, 22, 22, 32))
     feat1 = tf.ones(shape=(8, 11, 11, 32))
-    y = ppd(feat1,feat2,feat3)
-
+    y = ppd(feat1, feat2, feat3)
     print("weights:", len(ppd.weights))
     print("trainable weights:", len(ppd.trainable_weights))
     print("config:", ppd.get_config())
     print(f"Y: {y.shape}")
-

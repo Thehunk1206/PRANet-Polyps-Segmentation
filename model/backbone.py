@@ -25,12 +25,10 @@ import os
 
 import tensorflow as tf
 from tensorflow.keras.applications.resnet50 import ResNet50
-from tensorflow.python import keras
 
 
 class FE_backbone():
     def __init__(self, inshape: tuple = (352, 352, 3), is_trainable: bool = True):
-        super(FE_backbone, self).__init__()
         self.inshape = inshape
         self.is_trainable = is_trainable
         self.resnet_backbone = ResNet50(
@@ -45,13 +43,13 @@ class FE_backbone():
             'conv5_block3_out',  # 2048
         ]
 
-    def get_fe_backbone(self):
+    def get_fe_backbone(self)-> tf.keras.Model:
 
         layer_out = []
         for layer_name in self.feature_extractor_layer_name:
             layer_out.append(self.resnet_backbone.get_layer(layer_name).output)
 
-        fe_backbone_model = keras.models.Model(
+        fe_backbone_model = tf.keras.models.Model(
             inputs=self.resnet_backbone.input, outputs=layer_out)
 
         return fe_backbone_model
