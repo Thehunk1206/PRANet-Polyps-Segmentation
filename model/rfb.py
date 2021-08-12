@@ -27,8 +27,8 @@ from conv_module import ConvModule
 
 
 class RFB(tf.keras.layers.Layer):
-    def __init__(self, filters: int):
-        super(RFB, self).__init__()
+    def __init__(self, filters: int, name:str):
+        super(RFB, self).__init__(name=name)
         self.filters = filters
 
         self.branch_1 = tf.keras.Sequential([
@@ -93,7 +93,7 @@ class RFB(tf.keras.layers.Layer):
 
 # test the module
 if __name__ == "__main__":
-    rfb = RFB(32)
+    rfb = RFB(32, "RFB_test")
     # first call to the `rfb` will create weights
     y = rfb(tf.ones(shape=(8, 7, 7, 2048)))
 

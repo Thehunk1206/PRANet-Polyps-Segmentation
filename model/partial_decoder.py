@@ -28,8 +28,8 @@ from conv_module import ConvModule
 
 
 class PartialDecoder(tf.keras.layers.Layer):
-    def __init__(self, filters: int):
-        super(PartialDecoder, self).__init__()
+    def __init__(self, filters: int, name:str):
+        super(PartialDecoder, self).__init__(name=name)
         self.filters = filters
 
         self.upsampling = tf.keras.layers.UpSampling2D(
@@ -76,7 +76,7 @@ class PartialDecoder(tf.keras.layers.Layer):
 
 # test the module
 if __name__ == "__main__":
-    ppd = PartialDecoder(32)
+    ppd = PartialDecoder(32, name="partial_decoder")
     # first call to the `ppd` will create weights
     feat3 = tf.ones(shape=(8, 44, 44, 32))
     feat2 = tf.ones(shape=(8, 22, 22, 32))

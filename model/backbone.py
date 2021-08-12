@@ -21,7 +21,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
-import os
 
 import tensorflow as tf
 from tensorflow.keras.applications.resnet50 import ResNet50
@@ -43,27 +42,32 @@ class FE_backbone():
             'conv5_block3_out',  # 2048
         ]
 
-    def get_fe_backbone(self)-> tf.keras.Model:
+    def get_fe_backbone(self) -> tf.keras.Model:
 
         layer_out = []
         for layer_name in self.feature_extractor_layer_name:
             layer_out.append(self.resnet_backbone.get_layer(layer_name).output)
 
         fe_backbone_model = tf.keras.models.Model(
-            inputs=self.resnet_backbone.input, outputs=layer_out)
+            inputs=self.resnet_backbone.input, outputs=layer_out, name='resnet50_include_top_false')
 
         return fe_backbone_model
 
-#test the module
+
+# test the module
 if __name__ == "__main__":
     fe_resnet = FE_backbone()
     model = fe_resnet.get_fe_backbone()
     print(model.output)
-    image_raw = tf.io.read_file('polyps_dataset/images/cju0qkwl35piu0993l0dewei2.jpg')
-    image = tf.image.decode_jpeg(image_raw,channels=3)
-    image = tf.image.resize(image,[352,352])
+    image_raw = tf.io.read_file(
+        'polyps_dataset/images/cju0qkwl35piu0993l0dewei2.jpg')
+    image = tf.image.decode_jpeg(image_raw, channels=3)
+    image = tf.image.resize(image, [352, 352])
     image = tf.cast(image, dtype=tf.float32)
     image = image/255.0
     image = tf.expand_dims(image, axis=0)
     side_features = model(image)
-    side_features1,side_features2,side_features3 = side_features[0], side_features[1],side_features[2]
+    print(model.summary())
+    side_features1, side_features2, side_features3 = side_features[
+        0], side_features[1], side_features[2]
+    

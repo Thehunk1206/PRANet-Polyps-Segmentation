@@ -27,21 +27,20 @@ import tensorflow as tf
 
 
 class ReverseAttention(tf.keras.layers.Layer):
-    def __init__(self, filters: int = 64, kernel_size: tuple = (3, 3), **kwargs):
-        super(ReverseAttention, self).__init__(**kwargs)
+    def __init__(self,name:str, filters: int = 64, kernel_size: tuple = (3, 3), dilation_rate: tuple = (1, 1), **kwargs):
+        super(ReverseAttention, self).__init__(name=name, **kwargs)
         self.filters = filters
         self.kernel_size = kernel_size
 
         self.conv1 = ConvModule(filters=self.filters, kernel_size=(1, 1))
         self.conv2 = ConvModule(filters=self.filters,
-                                kernel_size=self.kernel_size)
+                                kernel_size=self.kernel_size, dilation_rate=dilation_rate)
         self.conv3 = ConvModule(filters=self.filters,
-                                kernel_size=self.kernel_size)
-        self.conv4 = ConvModule(filters=1, kernel_size=self.kernel_size)
+                                kernel_size=self.kernel_size, dilation_rate=dilation_rate)
+        self.conv4 = ConvModule(filters=1, kernel_size=self.kernel_size, dilation_rate=dilation_rate)
 
     def call(self, side_feat: tf.Tensor, saliency_m: tf.Tensor) -> tf.Tensor:
-        prev_sm = saliency_m
-        x = tf.sigmoid(prev_sm)
+        x = tf.sigmoid(saliency_m)
         x = -1*(x)+1
         x = tf.math.multiply(x, side_feat)
 
@@ -58,7 +57,7 @@ class ReverseAttention(tf.keras.layers.Layer):
         config = super().get_config()
         config.update({
             "filters": self.filters,
-            "kernel_size": self.kernel_size
+            "kernel_size": self.kernel_size,
         })
 
         return config
@@ -69,7 +68,7 @@ class ReverseAttention(tf.keras.layers.Layer):
 
 
 if __name__ == "__main__":
-    ra = ReverseAttention(filters=64, kernel_size=(3, 3))
+    ra = ReverseAttention(filters=64, kernel_size=(3, 3),name="RA_test")
     # first call to the `ra` will create weights
 
     sm = tf.ones(shape=(8, 44, 44, 1))
