@@ -52,16 +52,18 @@ class PRAResnet(tf.keras.Model):
         self.ppd = PartialDecoder(filters=self.filters, name="partial_decoder")
         self.resize_sg = preprocessing.Resizing(self.IMG_H, self.IMG_W, name='salient_out_5')
 
-        # reverse attention branch
+        # reverse attention branch 4
         self.resize_4 = preprocessing.Resizing(self.IMG_H//32, self.IMG_W//32, name="resize4")
         self.ra_4 = ReverseAttention(
             filters=128, kernel_size=(3, 3), dilation_rate=(2, 2), name="reverse_attention_br4")
         self.resize_s4 = preprocessing.Resizing(self.IMG_H, self.IMG_W,name="salient_out_4")
 
+        # reverse attention branch 3
         self.resize_3 = preprocessing.Resizing(self.IMG_H//16, self.IMG_W//16, name="resize3")
         self.ra_3 = ReverseAttention(filters=64, name="reverse_attention_br3")
         self.resize_s3 = preprocessing.Resizing(self.IMG_H, self.IMG_W, name="salient_out_3")
 
+        # reverse attention branch 2
         self.resize_2 = preprocessing.Resizing(self.IMG_H//8, self.IMG_W//8, name="resize2")
         self.ra_2 = ReverseAttention(filters=64, name="reverse_attention_br2")
         self.resize_s2 = preprocessing.Resizing(self.IMG_H, self.IMG_W, name="final_salient_out_2")
@@ -96,6 +98,9 @@ class PRAResnet(tf.keras.Model):
         lateral_out_s2 = self.resize_s2(s2)# resize (batch,h/8,w/8,1) => (batch,h,w,1) #out 2
 
         return lateral_out_sg, lateral_out_s4, lateral_out_s3, lateral_out_s2
+    
+    def compile(self, optimizer, loss, metrics, loss_weights, weighted_metrics, run_eagerly, steps_per_execution, **kwargs):
+        return super().compile(optimizer=optimizer, loss=loss, metrics=metrics, loss_weights=loss_weights, weighted_metrics=weighted_metrics, run_eagerly=run_eagerly, steps_per_execution=steps_per_execution, **kwargs)
 
     def build_graph(self, inshape:tuple) -> tf.keras.Model:
         '''
@@ -106,7 +111,7 @@ class PRAResnet(tf.keras.Model):
         return tf.keras.Model(inputs=[x], outputs = self.call(x))
 
 
-# test the model
+# test model class
 if __name__ == "__main__":
     from time import time
     tf.random.set_seed(3)

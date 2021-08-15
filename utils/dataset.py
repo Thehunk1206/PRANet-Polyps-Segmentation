@@ -28,7 +28,8 @@ import glob
 
 from sklearn.model_selection import train_test_split
 import tensorflow as tf
-from tensorflow.python.ops.gen_math_ops import imag
+from tensorflow.python.data.ops.dataset_ops import DatasetV2
+
 
 
 class TfdataPipeline:
@@ -107,7 +108,7 @@ class TfdataPipeline:
         return dataset
 
 
-    def data_loader(self, dataset_type: str = 'train'):
+    def data_loader(self, dataset_type: str = 'train')-> DatasetV2:
         if dataset_type not in self.__datasettype:
             print(
                 f"[Error] invalid option {dataset_type} option should be in {self.__datasettype}")
