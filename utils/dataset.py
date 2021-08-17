@@ -31,7 +31,6 @@ import tensorflow as tf
 from tensorflow.python.data.ops.dataset_ops import DatasetV2
 
 
-
 class TfdataPipeline:
     def __init__(
         self,
@@ -39,13 +38,15 @@ class TfdataPipeline:
         IMG_H: int = 512,
         IMG_W: int = 512,
         IMG_C: int = 3,
-        batch_size: int = 32
+        batch_size: int = 32,
+        split: float = 0.1
     ) -> None:
         self.BASE_DATASET_DIR = BASE_DATASET_DIR
         self.IMG_H = IMG_H
         self.IMG_W = IMG_W
         self.IMG_C = IMG_C
         self.batch_size = batch_size
+        self.split = split
         self.__datasettype = ['train', 'valid', 'test']
 
         if not os.path.exists(BASE_DATASET_DIR):
@@ -53,7 +54,7 @@ class TfdataPipeline:
                 f"[Error] Dataset directory {BASE_DATASET_DIR} does not exist!")
             sys.exit()
 
-    def __load_and_split_dataset_files(self, path: str, split: float = 0.1):
+    def __load_and_split_dataset_files(self, path: str, split: float):
         '''Loads the path name of each images and masks
         and split it in ratio 80:10:10(train:valid:test)'''
 
@@ -75,7 +76,6 @@ class TfdataPipeline:
 
         return (train_x, train_y), (valid_x, valid_y), (test_x, test_y)
 
-    @tf.function
     def __read_image_and_mask(self, image_path: str, mask_path: str) -> tf.Tensor:
 
         img_raw = tf.io.read_file(image_path)
@@ -95,26 +95,28 @@ class TfdataPipeline:
 
         return img, mask
 
-    @tf.function
     def __tf_dataset(self, images_path: str, mask_path: str) -> tf.data.Dataset:
         dataset = tf.data.Dataset.from_tensor_slices((images_path, mask_path))
         # dataset = dataset.shuffle(buffer_size=self.batch_size*2)
         dataset = dataset.map(
             self.__read_image_and_mask, num_parallel_calls=tf.data.AUTOTUNE)
         dataset = dataset.batch(batch_size=self.batch_size)
-
-        dataset = dataset.cache().prefetch(tf.data.AUTOTUNE)
+        dataset = dataset.prefetch(tf.data.AUTOTUNE)
+        # dataset = dataset.cache()
+        # dataset = dataset.repeat()
 
         return dataset
 
-
-    def data_loader(self, dataset_type: str = 'train')-> DatasetV2:
+    def data_loader(self, dataset_type: str = 'train') -> DatasetV2:
+        '''
+        dataset_type should be in ['train','valid','test']
+        '''
         if dataset_type not in self.__datasettype:
             print(
                 f"[Error] invalid option {dataset_type} option should be in {self.__datasettype}")
             sys.exit()
         (train_x, train_y), (valid_x, valid_y), (test_x,
-                                                 test_y) = self.__load_and_split_dataset_files(self.BASE_DATASET_DIR)
+                                                 test_y) = self.__load_and_split_dataset_files(self.BASE_DATASET_DIR, split=self.split)
 
         if dataset_type == 'train':
             train_dataset = self.__tf_dataset(train_x, train_y)
@@ -128,8 +130,9 @@ class TfdataPipeline:
 
 
 if __name__ == "__main__":
+    from tqdm import tqdm
     tf_datapipeline = TfdataPipeline(BASE_DATASET_DIR="polyps_dataset/")
     train_data = tf_datapipeline.data_loader()
 
-    for image, mask in train_data.take(2):
+    for image, mask in tqdm(train_data, unit='batch'):
         print(image.shape)

@@ -26,7 +26,7 @@ import tensorflow as tf
 
 class WBCEIOULoss(tf.keras.losses.Loss):
     def __init__(self, name: str,):
-        super().__init__(name=name)
+        super(WBCEIOULoss, self).__init__(name=name)
 
     def call(self, y_mask: tf.Tensor, y_pred: tf.Tensor):
         bce_iou_weights = 1 + 7 * \
@@ -40,7 +40,7 @@ class WBCEIOULoss(tf.keras.losses.Loss):
             wbce_loss*bce_iou_weights, axis=(1, 2)) / tf.reduce_sum(bce_iou_weights, axis=(1, 2))
 
         # weighted IOU loss
-        y_pred = tf.sigmoid(y_pred)
+        # y_pred = tf.sigmoid(y_pred)
         inter = tf.reduce_sum((y_pred * y_mask) * bce_iou_weights, axis=(1, 2))
         union = tf.reduce_sum((y_pred + y_mask) * bce_iou_weights, axis=(1, 2))
         wiou_loss = 1 - (inter+1)/(union - inter+1)
@@ -58,19 +58,55 @@ class WBCEIOULoss(tf.keras.losses.Loss):
 
 
 class SSIMLoss(tf.keras.losses.Loss):
-    def __init__(self, name:str):
-        super().__init__(name=name)
+    def __init__(self, name: str):
+        super(SSIMLoss, self).__init__(name=name)
+    '''
+    Experimental
+    '''
 
     def call(self, y_mask: tf.Tensor, y_pred: tf.Tensor):
-        ssim = tf.image.ssim_multiscale(y_mask,y_pred,max_val=1.0)
+        ssim = tf.image.ssim_multiscale(y_mask, y_pred, max_val=1.0)
         return 1 - ssim
-    
+
     def get_config(self):
         return super().get_config()
-    
+
     @classmethod
     def from_config(cls, config):
         return super().from_config(config)
+
+
+class DiceCoef(tf.keras.metrics.Metric):
+
+    def __init__(self, name: str, **kwargs):
+        super(DiceCoef, self).__init__(name=name, **kwargs)
+        self.dice_coef = self.add_weight(
+            name='Dice Coefficient', initializer='zeros')
+
+    def update_state(self, y_mask: tf.Tensor, y_pred: tf.Tensor, **kwargs):
+        smooth = 1e-15
+        y_mask = tf.keras.layers.Flatten()(y_mask)
+        y_pred = tf.keras.layers.Flatten()(y_pred)
+        y_pred = tf.cast(tf.math.greater(y_pred, 0.5), tf.float32)
+        intersection = tf.reduce_sum(tf.multiply(y_mask, y_pred))
+        dice = (2.0 * intersection) / \
+            (tf.reduce_sum(y_mask) + tf.reduce_sum(y_pred) + smooth)
+
+        self.dice_coef.assign_add(dice)
+
+    def result(self):
+        return self.dice_coef
+
+    def reset_states(self):
+        self.dice_coef.assign(0.0)
+
+    def get_config(self):
+        return super().get_config()
+
+    @classmethod
+    def from_config(cls, config):
+        return super().from_config(config)
+
 
 
 if __name__ == "__main__":
@@ -81,12 +117,17 @@ if __name__ == "__main__":
 
     loss_w_bce_iou = WBCEIOULoss(name='structure_loss')
     loss_ms_ssim = SSIMLoss(name='SSIM_loss')
+    dice_metric = DiceCoef(name='dice metric')
 
     y_mask = read_mask(path_to_mask1)
     y_pred = read_mask(path_to_mask2)
 
-    total_w_bce_iou_loss = loss_w_bce_iou(y_mask, y_mask)
-    total_ssim_loss = loss_ms_ssim(y_mask, y_mask)
+    total_w_bce_iou_loss = loss_w_bce_iou(y_mask, y_pred)
+    total_ssim_loss = loss_ms_ssim(y_mask, y_pred)
+    dice_metric.update_state(y_mask, y_pred)
 
     print(f"w_bce_iou_loss: {total_w_bce_iou_loss}")
     print(f"SSIM loss: {total_ssim_loss}")
+    print(f"dice coef: {dice_metric.result()}")
+    dice_metric.reset_states()
+    print(f"dice coef after reset: {dice_metric.result()}")

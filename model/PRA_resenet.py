@@ -25,15 +25,15 @@ SOFTWARE.
 import tensorflow as tf
 from tensorflow.keras.layers.experimental import preprocessing
 
-from ra_module import ReverseAttention
-from partial_decoder import PartialDecoder
-from rfb import RFB
-from backbone import FE_backbone
+from model.ra_module import ReverseAttention
+from model.partial_decoder import PartialDecoder
+from model.rfb import RFB
+from model.backbone import FE_backbone
 
 
-class PRAResnet(tf.keras.Model):
+class PRAresnet(tf.keras.Model):
     def __init__(self, IMG_H: int = 352, IMG_W: int = 352, filters: int = 32, **kwargs):
-        super(PRAResnet, self).__init__(**kwargs)
+        super(PRAresnet, self).__init__(**kwargs)
         self.IMG_H = IMG_H
         self.IMG_W = IMG_W
         self.filters = filters
@@ -79,28 +79,83 @@ class PRAResnet(tf.keras.Model):
 
         # Partial decoder 
         sg = self.ppd(feat4_rfb, feat3_rfb, feat2_rfb) # => (batch,h/8,w/8,1) Global saliency map
-        lateral_out_sg = self.resize_sg(sg)# resize (batch,h/8,w/8,1) => (batch,h,w,1) #out 5
+        lateral_out_sg = tf.sigmoid(self.resize_sg(sg))# resize (batch,h/8,w/8,1) => (batch,h,w,1) #out 5
 
         # reverse attention branch 4 
         resized_sg = self.resize_4(sg)# resize (batch, h/8,w/8,1) => (batch, h/32,w/32,1)
         s4 = self.ra_4(features[3],resized_sg)
-        lateral_out_s4 = self.resize_s4(s4)# resize (batch,h/32,w/32,1) => (batch,h,w,1) #out 4
+        lateral_out_s4 = tf.sigmoid(self.resize_s4(s4))# resize (batch,h/32,w/32,1) => (batch,h,w,1) #out 4
 
 
         # reverse attention branch 3
         resized_s4 = self.resize_3(s4)# resize (batch, h/32,w/32,1) => (batch, h/16,w/16,1)
         s3 = self.ra_3(features[2],resized_s4)
-        lateral_out_s3 = self.resize_s3(s3)# resize (batch,h/16,w/16,1) => (batch,h,w,1) #out 3
+        lateral_out_s3 = tf.sigmoid(self.resize_s3(s3))# resize (batch,h/16,w/16,1) => (batch,h,w,1) #out 3
         
         # reverse attention branch 2
         resized_s3 = self.resize_2(s3)# resize (batch, h/16,w/16,1) => (batch, h/8,w/8,1)
         s2 = self.ra_2(features[1],resized_s3)
-        lateral_out_s2 = self.resize_s2(s2)# resize (batch,h/8,w/8,1) => (batch,h,w,1) #out 2
+        lateral_out_s2 = tf.sigmoid(self.resize_s2(s2))# resize (batch,h/8,w/8,1) => (batch,h,w,1) #out 2
 
         return lateral_out_sg, lateral_out_s4, lateral_out_s3, lateral_out_s2
+
+    def compile(
+        self, 
+        optimizer: tf.keras.optimizers.Optimizer, 
+        loss: tf.keras.losses.Loss, 
+        train_metric: tf.keras.metrics.Metric,
+        val_metric: tf.keras.metrics.Metric,
+        loss_weights: list = [1,1,1,1],
+        **kwargs
+    ):
+        super(PRAresnet, self).compile(**kwargs)
+        assert len(loss_weights) == 4
+        self.optim = optimizer
+        self.loss_fn = loss
+        self.train_metric = train_metric
+        self.val_metric = val_metric
+        self.loss_weights = loss_weights
+
+    @tf.function
+    def train_step(self, x_img: tf.Tensor, y_mask: tf.Tensor, gclip:float):
+        with tf.GradientTape() as tape:
+            lateral_out_sg, lateral_out_s4, lateral_out_s3, lateral_out_s2 = self(x_img, training=True)
+            loss1 = self.loss_fn(y_mask, lateral_out_sg)
+            loss2 = self.loss_fn(y_mask, lateral_out_s4)
+            loss3 = self.loss_fn(y_mask, lateral_out_s3)
+            loss4 = self.loss_fn(y_mask, lateral_out_s2)
+
+            train_loss = (self.loss_weights[0]*loss1) + (self.loss_weights[1]*loss2) + \
+                            (self.loss_weights[2]*loss3) + (self.loss_weights[-1]*loss4)
+
+        # get gradients
+        grads = tape.gradient(train_loss, self.trainable_variables)
+        grads = [(tf.clip_by_value(grad, clip_value_min=-gclip, clip_value_max=gclip))
+                for grad in grads]
+
+        self.optim.apply_gradients(zip(grads, self.trainable_variables))
+
+        # update metrics
+        self.train_metric.update_state(y_mask, lateral_out_s2)
+
+        return train_loss
     
-    def compile(self, optimizer, loss, metrics, loss_weights, weighted_metrics, run_eagerly, steps_per_execution, **kwargs):
-        return super().compile(optimizer=optimizer, loss=loss, metrics=metrics, loss_weights=loss_weights, weighted_metrics=weighted_metrics, run_eagerly=run_eagerly, steps_per_execution=steps_per_execution, **kwargs)
+    @tf.function
+    def test_step(self, x_img: tf.Tensor, y_mask: tf.Tensor):
+        lateral_out_sg, lateral_out_s4, lateral_out_s3, lateral_out_s2 = self(x_img, training=False)
+        loss1 = self.loss_fn(y_mask, lateral_out_sg)
+        loss2 = self.loss_fn(y_mask, lateral_out_s4)
+        loss3 = self.loss_fn(y_mask, lateral_out_s3)
+        loss4 = self.loss_fn(y_mask, lateral_out_s2)
+
+        val_loss = (self.loss_weights[0]*loss1) + (self.loss_weights[1]*loss2) + \
+                            (self.loss_weights[2]*loss3) + (self.loss_weights[-1]*loss4)
+
+        self.val_metric.update_state(y_mask, lateral_out_s2)
+
+        return val_loss
+    
+
 
     def build_graph(self, inshape:tuple) -> tf.keras.Model:
         '''
@@ -116,7 +171,7 @@ if __name__ == "__main__":
     from time import time
     tf.random.set_seed(3)
     raw_inputs = (352,352,3)
-    pranet = PRAResnet(IMG_H=352,IMG_W=352,filters=32)
+    pranet = PRAresnet(IMG_H=352,IMG_W=352,filters=32)
     start_time = time()
     out = pranet(tf.random.normal(shape=(8, *raw_inputs)))
     end_time = time()
@@ -124,4 +179,3 @@ if __name__ == "__main__":
     for o in out:
         print(o.shape)
     print(f"time taken for single forward pass: {(end_time-start_time)}")
-

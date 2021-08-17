@@ -24,7 +24,7 @@ SOFTWARE.
 
 
 import tensorflow as tf
-from conv_module import ConvModule
+from model.conv_module import ConvModule
 
 
 class PartialDecoder(tf.keras.layers.Layer):

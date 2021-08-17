@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
 
-from conv_module import ConvModule
+from model.conv_module import ConvModule
 import tensorflow as tf
 
 
