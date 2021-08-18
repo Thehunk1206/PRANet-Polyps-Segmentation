@@ -40,7 +40,7 @@ class WBCEIOULoss(tf.keras.losses.Loss):
             wbce_loss*bce_iou_weights, axis=(1, 2)) / tf.reduce_sum(bce_iou_weights, axis=(1, 2))
 
         # weighted IOU loss
-        # y_pred = tf.sigmoid(y_pred)
+        y_pred = tf.sigmoid(y_pred)
         inter = tf.reduce_sum((y_pred * y_mask) * bce_iou_weights, axis=(1, 2))
         union = tf.reduce_sum((y_pred + y_mask) * bce_iou_weights, axis=(1, 2))
         wiou_loss = 1 - (inter+1)/(union - inter+1)

@@ -79,23 +79,23 @@ class PRAresnet(tf.keras.Model):
 
         # Partial decoder 
         sg = self.ppd(feat4_rfb, feat3_rfb, feat2_rfb) # => (batch,h/8,w/8,1) Global saliency map
-        lateral_out_sg = tf.sigmoid(self.resize_sg(sg))# resize (batch,h/8,w/8,1) => (batch,h,w,1) #out 5
+        lateral_out_sg = self.resize_sg(sg)# resize (batch,h/8,w/8,1) => (batch,h,w,1) #out 5
 
         # reverse attention branch 4 
         resized_sg = self.resize_4(sg)# resize (batch, h/8,w/8,1) => (batch, h/32,w/32,1)
         s4 = self.ra_4(features[3],resized_sg)
-        lateral_out_s4 = tf.sigmoid(self.resize_s4(s4))# resize (batch,h/32,w/32,1) => (batch,h,w,1) #out 4
+        lateral_out_s4 = self.resize_s4(s4)# resize (batch,h/32,w/32,1) => (batch,h,w,1) #out 4
 
 
         # reverse attention branch 3
         resized_s4 = self.resize_3(s4)# resize (batch, h/32,w/32,1) => (batch, h/16,w/16,1)
         s3 = self.ra_3(features[2],resized_s4)
-        lateral_out_s3 = tf.sigmoid(self.resize_s3(s3))# resize (batch,h/16,w/16,1) => (batch,h,w,1) #out 3
+        lateral_out_s3 = self.resize_s3(s3)# resize (batch,h/16,w/16,1) => (batch,h,w,1) #out 3
         
         # reverse attention branch 2
         resized_s3 = self.resize_2(s3)# resize (batch, h/16,w/16,1) => (batch, h/8,w/8,1)
         s2 = self.ra_2(features[1],resized_s3)
-        lateral_out_s2 = tf.sigmoid(self.resize_s2(s2))# resize (batch,h/8,w/8,1) => (batch,h,w,1) #out 2
+        lateral_out_s2 = self.resize_s2(s2)# resize (batch,h/8,w/8,1) => (batch,h,w,1) #out 2
 
         return lateral_out_sg, lateral_out_s4, lateral_out_s3, lateral_out_s2
 
@@ -128,7 +128,7 @@ class PRAresnet(tf.keras.Model):
             train_loss = (self.loss_weights[0]*loss1) + (self.loss_weights[1]*loss2) + \
                             (self.loss_weights[2]*loss3) + (self.loss_weights[-1]*loss4)
 
-        # get gradients
+        # get gradients, clip gradient with some margin and apply to optimizer
         grads = tape.gradient(train_loss, self.trainable_variables)
         grads = [(tf.clip_by_value(grad, clip_value_min=-gclip, clip_value_max=gclip))
                 for grad in grads]
