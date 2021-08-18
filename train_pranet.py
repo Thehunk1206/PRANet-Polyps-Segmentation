@@ -42,7 +42,8 @@ def train(
     batch_size: int = 4,
     epochs: int = 20,
     lr: float = 1e-3,
-    gclip: float = 1.0
+    gclip: float = 1.0,
+    dataset_split: float= 0.1
 ):
     assert os.path.isdir(dataset_dir)
 
@@ -119,6 +120,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_path', type=str,
                         default='polyps_dataset/', help='path to dataset')
+    parser.add_argument('--data_split', type=float,
+                        default=0.1, help='split percent of val and test data')
     parser.add_argument('--epoch', type=int,
                         default=20, help='epoch number')
     parser.add_argument('--lr', type=float,
