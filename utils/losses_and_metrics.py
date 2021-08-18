@@ -119,8 +119,8 @@ if __name__ == "__main__":
     loss_ms_ssim = SSIMLoss(name='SSIM_loss')
     dice_metric = DiceCoef(name='dice metric')
 
-    y_mask = read_mask(path_to_mask1)
-    y_pred = read_mask(path_to_mask2)
+    y_mask = tf.random.normal([8,352,352,1])#read_mask(path_to_mask1)
+    y_pred = tf.random.normal([8,352,352,1]) #read_mask(path_to_mask2)
 
     total_w_bce_iou_loss = loss_w_bce_iou(y_mask, y_pred)
     total_ssim_loss = loss_ms_ssim(y_mask, y_pred)

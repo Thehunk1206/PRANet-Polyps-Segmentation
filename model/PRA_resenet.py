@@ -55,7 +55,7 @@ class PRAresnet(tf.keras.Model):
         # reverse attention branch 4
         self.resize_4 = preprocessing.Resizing(self.IMG_H//32, self.IMG_W//32, name="resize4")
         self.ra_4 = ReverseAttention(
-            filters=128, kernel_size=(3, 3), dilation_rate=(2, 2), name="reverse_attention_br4")
+            filters=256, kernel_size=(5, 5), dilation_rate=(1, 1), name="reverse_attention_br4")
         self.resize_s4 = preprocessing.Resizing(self.IMG_H, self.IMG_W,name="salient_out_4")
 
         # reverse attention branch 3
@@ -70,12 +70,12 @@ class PRAresnet(tf.keras.Model):
 
 
     def call(self, x: tf.Tensor):
-        features = self.resnet(x)
+        self.features = self.resnet(x)
 
         # RFB
-        feat2_rfb = self.rfb_2(features[1])  # => level_2(batch,h/8,w/8,32)
-        feat3_rfb = self.rfb_3(features[2])  # => level_3(batch,h/16,w/16,32)
-        feat4_rfb = self.rfb_4(features[3])  # => level_4(batch,h/32,w/32,32)
+        feat2_rfb = self.rfb_2(self.features[1])  # => level_2(batch,h/8,w/8,32)
+        feat3_rfb = self.rfb_3(self.features[2])  # => level_3(batch,h/16,w/16,32)
+        feat4_rfb = self.rfb_4(self.features[3])  # => level_4(batch,h/32,w/32,32)
 
         # Partial decoder 
         sg = self.ppd(feat4_rfb, feat3_rfb, feat2_rfb) # => (batch,h/8,w/8,1) Global saliency map
@@ -83,18 +83,18 @@ class PRAresnet(tf.keras.Model):
 
         # reverse attention branch 4 
         resized_sg = self.resize_4(sg)# resize (batch, h/8,w/8,1) => (batch, h/32,w/32,1)
-        s4 = self.ra_4(features[3],resized_sg)
+        s4 = self.ra_4(self.features[3],resized_sg)
         lateral_out_s4 = self.resize_s4(s4)# resize (batch,h/32,w/32,1) => (batch,h,w,1) #out 4
 
 
         # reverse attention branch 3
         resized_s4 = self.resize_3(s4)# resize (batch, h/32,w/32,1) => (batch, h/16,w/16,1)
-        s3 = self.ra_3(features[2],resized_s4)
+        s3 = self.ra_3(self.features[2],resized_s4)
         lateral_out_s3 = self.resize_s3(s3)# resize (batch,h/16,w/16,1) => (batch,h,w,1) #out 3
         
         # reverse attention branch 2
         resized_s3 = self.resize_2(s3)# resize (batch, h/16,w/16,1) => (batch, h/8,w/8,1)
-        s2 = self.ra_2(features[1],resized_s3)
+        s2 = self.ra_2(self.features[1],resized_s3)
         lateral_out_s2 = self.resize_s2(s2)# resize (batch,h/8,w/8,1) => (batch,h,w,1) #out 2
 
         return lateral_out_sg, lateral_out_s4, lateral_out_s3, lateral_out_s2
