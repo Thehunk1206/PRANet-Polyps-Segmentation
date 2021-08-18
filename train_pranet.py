@@ -90,7 +90,8 @@ def train(
         train_metric=train_metric,
         val_metric=val_metric
     )
-
+    tf.print(praresnet.build_graph(inshape=(img_size,img_size,3)).summary())
+    tf.print("==========Model configs==========")
     tf.print(
         f"Training and validating PRAresnet for {epochs} epochs \nlearing_rate: {lr} \nInput shape:({img_size},{img_size},3) \nBatch size: {batch_size}"
     )

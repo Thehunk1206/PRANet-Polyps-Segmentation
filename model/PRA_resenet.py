@@ -163,7 +163,7 @@ class PRAresnet(tf.keras.Model):
         reference: https://github.com/tensorflow/tensorflow/issues/31647#issuecomment-692586409
         '''
         x = tf.keras.layers.Input(shape=inshape)
-        return tf.keras.Model(inputs=[x], outputs = self.call(x))
+        return tf.keras.Model(inputs=[x], outputs = self.call(x), name='PRAnet')
 
 
 # test model class
