@@ -60,7 +60,7 @@ def train(
         IMG_H=img_size,
         IMG_W=img_size,
         batch_size=batch_size,
-        split=0.3
+        split=dataset_split
     )
     train_data = tf_datapipeline.data_loader(dataset_type='train')
     val_data = tf_datapipeline.data_loader(dataset_type='valid')
@@ -144,6 +144,7 @@ if __name__ == "__main__":
         epochs=opt.epoch,
         lr=opt.lr,
         gclip=opt.gclip,
-        trained_model_dir=opt.trained_model_path
+        trained_model_dir=opt.trained_model_path,
+        dataset_split=opt.data_split
     )
 
