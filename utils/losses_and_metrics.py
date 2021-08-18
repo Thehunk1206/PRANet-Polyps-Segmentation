@@ -28,6 +28,7 @@ class WBCEIOULoss(tf.keras.losses.Loss):
     def __init__(self, name: str,):
         super(WBCEIOULoss, self).__init__(name=name)
 
+    @tf.function
     def call(self, y_mask: tf.Tensor, y_pred: tf.Tensor):
         bce_iou_weights = 1 + 7 * \
             tf.abs(tf.nn.avg_pool2d(y_mask, ksize=27,
@@ -83,6 +84,7 @@ class DiceCoef(tf.keras.metrics.Metric):
         self.dice_coef = self.add_weight(
             name='Dice Coefficient', initializer='zeros')
 
+    @tf.function
     def update_state(self, y_mask: tf.Tensor, y_pred: tf.Tensor, **kwargs):
         smooth = 1e-15
         y_mask = tf.keras.layers.Flatten()(y_mask)

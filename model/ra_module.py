@@ -37,7 +37,7 @@ class ReverseAttention(tf.keras.layers.Layer):
                                 kernel_size=self.kernel_size, dilation_rate=dilation_rate)
         self.conv3 = ConvModule(filters=self.filters,
                                 kernel_size=self.kernel_size, dilation_rate=dilation_rate)
-        self.conv4 = ConvModule(filters=1, kernel_size=self.kernel_size, dilation_rate=dilation_rate)
+        self.conv4 = ConvModule(filters=1, kernel_size=(1,1), dilation_rate=dilation_rate)
 
     def call(self, side_feat: tf.Tensor, saliency_m: tf.Tensor) -> tf.Tensor:
         x = tf.sigmoid(saliency_m)

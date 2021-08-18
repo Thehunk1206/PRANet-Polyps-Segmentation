@@ -99,11 +99,9 @@ class TfdataPipeline:
         dataset = tf.data.Dataset.from_tensor_slices((images_path, mask_path))
         # dataset = dataset.shuffle(buffer_size=self.batch_size*2)
         dataset = dataset.map(
-            self.__read_image_and_mask, num_parallel_calls=tf.data.AUTOTUNE)
+            self.__read_image_and_mask, num_parallel_calls=tf.data.AUTOTUNE).cache()
         dataset = dataset.batch(batch_size=self.batch_size)
         dataset = dataset.prefetch(tf.data.AUTOTUNE)
-        # dataset = dataset.cache()
-        # dataset = dataset.repeat()
 
         return dataset
 
