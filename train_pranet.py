@@ -97,8 +97,6 @@ def train(
         loss=loss_fn,
         train_metric=train_metric,
         val_metric=val_metric,
-        train_summary_writer=train_writer,
-        val_summary_writer=val_writer
     )
     tf.print(praresnet.build_graph(inshape=(img_size, img_size, 3)).summary())
     tf.print("==========Model configs==========")
@@ -106,19 +104,15 @@ def train(
         f"Training and validating PRAresnet for {epochs} epochs \nlearing_rate: {lr} \nInput shape:({img_size},{img_size},3) \nBatch size: {batch_size}"
     )
     # train for epochs
-    step_t = 1
-    step_v = 1
     for e in range(epochs):
         t = time()
 
         for (x_train_img, y_train_mask) in tqdm(train_data, unit='steps', desc='training...', colour='red'):
             train_loss = praresnet.train_step(
-                x_img=x_train_img, y_mask=y_train_mask, gclip=gclip, step=step_t)
-            step_t = step_t + 1
+                x_img=x_train_img, y_mask=y_train_mask, gclip=gclip)
 
         for (x_val_img, y_val_mask) in tqdm(val_data, unit='steps', desc='Validating...', colour='green'):
-            val_loss = praresnet.test_step(x_img=x_val_img, y_mask=y_val_mask, step=step_v)
-            step_v = step_v + 1
+            val_loss = praresnet.test_step(x_img=x_val_img, y_mask=y_val_mask)
 
         tf.print(
             "ETA:{} - epoch: {} - loss: {} - dice: {} - val_loss: {} - val_dice: {}\n".format(
@@ -129,7 +123,13 @@ def train(
 
         tf.print("Writing to Tensorboard...")
         lateral_out_sg, lateral_out_s4, lateral_out_s3, lateral_out_s2 = praresnet(x_val_img, training=False)
+        with train_writer.as_default():
+            tf.summary.scalar(name='train_loss', data=train_loss, step=e+1)
+            tf.summary.scalar(name='dice', data=train_metric.result(), step=e+1)
+        
         with val_writer.as_default():
+            tf.summary.scalar(name='val_loss', data=val_loss, step=e+1)
+            tf.summary.scalar(name='val_dice', data=val_metric.result(), step=e+1)
             tf.summary.image(name='Y_mask', data=y_val_mask, step=e+1, max_outputs=batch_size, description='Val data')
             tf.summary.image(name='Global S Map', data=lateral_out_sg, step=e+1, max_outputs=batch_size, description='Val data')
             tf.summary.image(name='S4 Map', data=lateral_out_s4, step=e+1, max_outputs=batch_size, description='Val data')
@@ -171,5 +171,6 @@ if __name__ == "__main__":
         lr=opt.lr,
         gclip=opt.gclip,
         trained_model_dir=opt.trained_model_path,
-        dataset_split=opt.data_split
+        dataset_split=opt.data_split,
+        logdir=opt.logdir
     )
