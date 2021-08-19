@@ -30,7 +30,7 @@ class WBCEIOULoss(tf.keras.losses.Loss):
 
     @tf.function
     def call(self, y_mask: tf.Tensor, y_pred: tf.Tensor):
-        bce_iou_weights = 1 + 7 * \
+        bce_iou_weights = 1 + 5 * \
             tf.abs(tf.nn.avg_pool2d(y_mask, ksize=27,
                    strides=1, padding="SAME")-y_mask)
 
@@ -87,12 +87,11 @@ class DiceCoef(tf.keras.metrics.Metric):
     @tf.function
     def update_state(self, y_mask: tf.Tensor, y_pred: tf.Tensor, **kwargs):
         smooth = 1e-15
-        y_mask = tf.keras.layers.Flatten()(y_mask)
-        y_pred = tf.keras.layers.Flatten()(y_pred)
+        y_pred = tf.sigmoid(y_pred)
         y_pred = tf.cast(tf.math.greater(y_pred, 0.5), tf.float32)
-        intersection = tf.reduce_sum(tf.multiply(y_mask, y_pred))
-        dice = (2.0 * intersection) / \
-            (tf.reduce_sum(y_mask) + tf.reduce_sum(y_pred) + smooth)
+        intersection = tf.squeeze(tf.reduce_sum(tf.multiply(y_mask, y_pred), axis=(1,2)))
+        union = tf.reduce_sum((y_mask + y_pred), axis=(1,2)) + smooth
+        dice = tf.reduce_mean(((2*intersection) / union))
 
         self.dice_coef.assign(dice)
 
@@ -110,7 +109,6 @@ class DiceCoef(tf.keras.metrics.Metric):
         return super().from_config(config)
 
 
-
 if __name__ == "__main__":
     from visualize_bce_iou_loss_weigth import read_mask
 
@@ -124,8 +122,8 @@ if __name__ == "__main__":
     y_mask = read_mask(path_to_mask1)
     y_pred = read_mask(path_to_mask2)
 
-    # y_mask = tf.random.normal([8,352,352,1])
-    # y_pred = tf.random.normal([8,352,352,1])
+    # y_mask = tf.random.normal([8, 352, 352, 1])
+    # y_pred = tf.random.normal([8, 352, 352, 1])
 
     total_w_bce_iou_loss = loss_w_bce_iou(y_mask, y_pred)
     total_ssim_loss = loss_ms_ssim(y_mask, y_pred)
