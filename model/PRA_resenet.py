@@ -70,7 +70,7 @@ class PRAresnet(tf.keras.Model):
 
 
     def call(self, x: tf.Tensor):
-        self.features = self.resnet(x)
+        self.features = self.resnet(x) # self.var for writing in summary
 
         # RFB
         feat2_rfb = self.rfb_2(self.features[1])  # => level_2(batch,h/8,w/8,32)
@@ -105,6 +105,8 @@ class PRAresnet(tf.keras.Model):
         loss: tf.keras.losses.Loss, 
         train_metric: tf.keras.metrics.Metric,
         val_metric: tf.keras.metrics.Metric,
+        train_summary_writer: tf.summary.SummaryWriter,
+        val_summary_writer: tf.summary.SummaryWriter,
         loss_weights: list = [1,1,1,1],
         **kwargs
     ):
@@ -115,9 +117,12 @@ class PRAresnet(tf.keras.Model):
         self.train_metric = train_metric
         self.val_metric = val_metric
         self.loss_weights = loss_weights
+        self.train_writer = train_summary_writer
+        self.val_writer = val_summary_writer
 
     @tf.function
-    def train_step(self, x_img: tf.Tensor, y_mask: tf.Tensor, gclip:float):
+    def train_step(self, x_img: tf.Tensor, y_mask: tf.Tensor, gclip:float, step:int):
+        step = tf.cast(step, dtype=tf.int64)
         with tf.GradientTape() as tape:
             lateral_out_sg, lateral_out_s4, lateral_out_s3, lateral_out_s2 = self(x_img, training=True)
             loss1 = self.loss_fn(y_mask, lateral_out_sg)
@@ -138,10 +143,17 @@ class PRAresnet(tf.keras.Model):
         # update metrics
         self.train_metric.update_state(y_mask, lateral_out_s2)
 
+        #write to tensorboard
+        #TODO write Averages side features from resnet50
+        with self.train_writer.as_default():
+            tf.summary.scalar(name='train_loss', data=train_loss, step=step)
+            tf.summary.scalar(name='dice', data=self.train_metric.result(), step=step)
+
         return train_loss
     
     @tf.function
-    def test_step(self, x_img: tf.Tensor, y_mask: tf.Tensor):
+    def test_step(self, x_img: tf.Tensor, y_mask: tf.Tensor, step:int):
+        step = tf.cast(step , dtype=tf.int64)
         lateral_out_sg, lateral_out_s4, lateral_out_s3, lateral_out_s2 = self(x_img, training=False)
         loss1 = self.loss_fn(y_mask, lateral_out_sg)
         loss2 = self.loss_fn(y_mask, lateral_out_s4)
@@ -152,6 +164,12 @@ class PRAresnet(tf.keras.Model):
                             (self.loss_weights[2]*loss3) + (self.loss_weights[-1]*loss4)
 
         self.val_metric.update_state(y_mask, lateral_out_s2)
+        
+        #write to tensorflow
+        with self.val_writer.as_default():
+            tf.summary.scalar(name='train_loss', data=val_loss, step=step)
+            tf.summary.scalar(name='dice', data=self.val_metric.result(), step=step)
+
 
         return val_loss
     

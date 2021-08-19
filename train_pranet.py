@@ -22,17 +22,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
 
+from datetime import datetime
+from time import time
+from tqdm import tqdm
+import argparse
+import sys
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-import sys
-import argparse
-from tqdm import tqdm
-from time import time
 
-import tensorflow as tf
-from model.PRA_resenet import PRAresnet
-from utils.dataset import TfdataPipeline
 from utils.losses_and_metrics import WBCEIOULoss, DiceCoef
+from utils.dataset import TfdataPipeline
+from model.PRA_resenet import PRAresnet
+import tensorflow as tf
 
 
 def train(
@@ -43,7 +44,8 @@ def train(
     epochs: int = 20,
     lr: float = 1e-3,
     gclip: float = 1.0,
-    dataset_split: float= 0.1
+    dataset_split: float = 0.1,
+    logdir: str = "logs/"
 ):
     assert os.path.isdir(dataset_dir)
 
@@ -53,6 +55,11 @@ def train(
 
     if not os.path.exists(trained_model_dir):
         os.mkdir(path=trained_model_dir)
+
+    # instantiate tf.summary writer
+    logsdir = logdir + "PRAnet/" + datetime.now().strftime("%Y%m%d-%H%M%S")
+    train_writer = tf.summary.create_file_writer(logsdir + "/train/")
+    val_writer = tf.summary.create_file_writer(logsdir + "/val/")
 
     # initialize tf.data pipeline
     tf_datapipeline = TfdataPipeline(
@@ -89,22 +96,29 @@ def train(
         optimizer=optimizer,
         loss=loss_fn,
         train_metric=train_metric,
-        val_metric=val_metric
+        val_metric=val_metric,
+        train_summary_writer=train_writer,
+        val_summary_writer=val_writer
     )
-    tf.print(praresnet.build_graph(inshape=(img_size,img_size,3)).summary())
+    tf.print(praresnet.build_graph(inshape=(img_size, img_size, 3)).summary())
     tf.print("==========Model configs==========")
     tf.print(
         f"Training and validating PRAresnet for {epochs} epochs \nlearing_rate: {lr} \nInput shape:({img_size},{img_size},3) \nBatch size: {batch_size}"
     )
+    # train for epochs
+    step_t = 1
+    step_v = 1
     for e in range(epochs):
         t = time()
 
         for (x_train_img, y_train_mask) in tqdm(train_data, unit='steps', desc='training...', colour='red'):
             train_loss = praresnet.train_step(
-                x_img=x_train_img, y_mask=y_train_mask, gclip=gclip)
+                x_img=x_train_img, y_mask=y_train_mask, gclip=gclip, step=step_t)
+            step_t = step_t + 1
 
         for (x_val_img, y_val_mask) in tqdm(val_data, unit='steps', desc='Validating...', colour='green'):
-            val_loss = praresnet.test_step(x_img=x_val_img, y_mask=y_val_mask)
+            val_loss = praresnet.test_step(x_img=x_val_img, y_mask=y_val_mask, step=step_v)
+            step_v = step_v + 1
 
         tf.print(
             "ETA:{} - epoch: {} - loss: {} - dice: {} - val_loss: {} - val_dice: {}\n".format(
@@ -112,6 +126,16 @@ def train(
                     train_metric.result()), val_loss, float(val_metric.result())
             )
         )
+
+        tf.print("Writing to Tensorboard...")
+        lateral_out_sg, lateral_out_s4, lateral_out_s3, lateral_out_s2 = praresnet(x_val_img, training=False)
+        with val_writer.as_default():
+            tf.summary.image(name='Y_mask', data=y_val_mask, step=e+1, max_outputs=batch_size, description='Val data')
+            tf.summary.image(name='Global S Map', data=lateral_out_sg, step=e+1, max_outputs=batch_size, description='Val data')
+            tf.summary.image(name='S4 Map', data=lateral_out_s4, step=e+1, max_outputs=batch_size, description='Val data')
+            tf.summary.image(name='S3 Map', data=lateral_out_s3, step=e+1, max_outputs=batch_size, description='Val data')
+            tf.summary.image(name='S2 Map', data=lateral_out_s2, step=e+1, max_outputs=batch_size, description='Val data')
+        
         train_metric.reset_states()
         val_metric.reset_states()
 
@@ -134,17 +158,18 @@ if __name__ == "__main__":
                         default=1.0, help='gradient clipping margin')
     parser.add_argument('--trained_model_path', type=str,
                         default='trained_model/')
+    parser.add_argument('--logdir', type=str, help="Tensorboard logs",
+                        default='logs/')
 
     opt = parser.parse_args()
 
     train(
         dataset_dir=opt.data_path,
-        img_size= opt.inputsize,
-        batch_size= opt.batchsize,
+        img_size=opt.inputsize,
+        batch_size=opt.batchsize,
         epochs=opt.epoch,
         lr=opt.lr,
         gclip=opt.gclip,
         trained_model_dir=opt.trained_model_path,
         dataset_split=opt.data_split
     )
-
