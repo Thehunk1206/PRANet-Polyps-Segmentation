@@ -33,6 +33,7 @@ class WBCEIOULoss(tf.keras.losses.Loss):
         bce_iou_weights = 1 + 5 * \
             tf.abs(tf.nn.avg_pool2d(y_mask, ksize=27,
                    strides=1, padding="SAME")-y_mask)
+        y_pred = tf.sigmoid(y_pred)
 
         # weighted BCE loss
         wbce_loss = tf.nn.sigmoid_cross_entropy_with_logits(
@@ -41,7 +42,7 @@ class WBCEIOULoss(tf.keras.losses.Loss):
             wbce_loss*bce_iou_weights, axis=(1, 2)) / tf.reduce_sum(bce_iou_weights, axis=(1, 2))
 
         # weighted IOU loss
-        y_pred = tf.sigmoid(y_pred)
+        y_pred = tf.cast(tf.math.greater(y_pred, 0.5), tf.float32)
         inter = tf.reduce_sum((y_pred * y_mask) * bce_iou_weights, axis=(1, 2))
         union = tf.reduce_sum((y_pred + y_mask) * bce_iou_weights, axis=(1, 2))
         wiou_loss = 1 - (inter+1)/(union - inter+1)

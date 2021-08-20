@@ -127,6 +127,8 @@ def train(
         lateral_out_s4 = tf.sigmoid(lateral_out_s4)
         lateral_out_s3 = tf.sigmoid(lateral_out_s3)
         lateral_out_s2 = tf.sigmoid(lateral_out_s2)
+        lateral_out_s2 = tf.cast(tf.math.greater(lateral_out_s2, 0.5), tf.float32)
+
         with train_writer.as_default():
             tf.summary.scalar(name='train_loss', data=train_loss, step=e+1)
             tf.summary.scalar(name='dice', data=train_metric.result(), step=e+1)
