@@ -55,7 +55,7 @@ class PRAresnet(tf.keras.Model):
         # reverse attention branch 4
         self.resize_4 = preprocessing.Resizing(self.IMG_H//32, self.IMG_W//32, name="resize4")
         self.ra_4 = ReverseAttention(
-            filters=256, kernel_size=(5, 5), name="reverse_attention_br4")
+            filters=256, kernel_size=(5, 5),branch='gsmap', name="reverse_attention_br4")
         self.resize_s4 = preprocessing.Resizing(self.IMG_H, self.IMG_W,name="salient_out_4")
 
         # reverse attention branch 3

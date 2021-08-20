@@ -27,28 +27,44 @@ import tensorflow as tf
 
 
 class ReverseAttention(tf.keras.layers.Layer):
-    def __init__(self,name:str, filters: int = 64, kernel_size: tuple = (3, 3), dilation_rate: tuple = (1, 1), **kwargs):
+    def __init__(self, name: str, filters: int = 64, kernel_size: tuple = (3, 3), branch: str = 'ssmap', **kwargs):
         super(ReverseAttention, self).__init__(name=name, **kwargs)
+        assert branch in ['ssmap', 'gsmap']
         self.filters = filters
         self.kernel_size = kernel_size
+        self.branch = branch
 
-        self.conv1 = ConvModule(filters=self.filters, kernel_size=(1, 1))
-        self.conv2 = ConvModule(filters=self.filters,
-                                kernel_size=self.kernel_size, dilation_rate=dilation_rate)
-        self.conv3 = ConvModule(filters=self.filters,
-                                kernel_size=self.kernel_size, dilation_rate=dilation_rate)
-        self.conv4 = ConvModule(filters=1, kernel_size=(1,1), dilation_rate=dilation_rate)
+        if self.branch == 'ssmap':
+            self.ssmap_conv = tf.keras.Sequential([
+                ConvModule(filters=self.filters, kernel_size=(1, 1)),
+                ConvModule(filters=self.filters, kernel_size=self.kernel_size),
+                tf.keras.layers.ReLU(),
+                ConvModule(filters=self.filters, kernel_size=self.kernel_size),
+                tf.keras.layers.ReLU(),
+                ConvModule(filters=1, kernel_size=self.kernel_size)
+            ])
+
+        if self.branch == 'gsmap':
+            self.gsmap_conv = tf.keras.Sequential([
+                ConvModule(filters=self.filters, kernel_size=(1, 1)),
+                ConvModule(filters=self.filters, kernel_size=self.kernel_size),
+                tf.keras.layers.ReLU(),
+                ConvModule(filters=self.filters, kernel_size=self.kernel_size),
+                tf.keras.layers.ReLU(),
+                ConvModule(filters=self.filters, kernel_size=self.kernel_size),
+                tf.keras.layers.ReLU(),
+                ConvModule(filters=1, kernel_size=(1, 1))
+            ])
 
     def call(self, side_feat: tf.Tensor, saliency_m: tf.Tensor) -> tf.Tensor:
         x = tf.sigmoid(saliency_m)
         x = -1*(x)+1
         x = tf.math.multiply(x, side_feat)
 
-        x = self.conv1(x)
-        x = tf.nn.relu(self.conv2(x))
-        x = tf.nn.relu(self.conv3(x))
-        ra_feat = self.conv4(x)
-
+        if self.branch == 'ssmap':
+            ra_feat = self.ssmap_conv(x)
+        else:
+            ra_feat = self.gsmap_conv(x)
         ra_feat = ra_feat + saliency_m
 
         return ra_feat
@@ -58,6 +74,7 @@ class ReverseAttention(tf.keras.layers.Layer):
         config.update({
             "filters": self.filters,
             "kernel_size": self.kernel_size,
+            "branch" : self.branch
         })
 
         return config
@@ -68,7 +85,7 @@ class ReverseAttention(tf.keras.layers.Layer):
 
 
 if __name__ == "__main__":
-    ra = ReverseAttention(filters=64, kernel_size=(3, 3),name="RA_test")
+    ra = ReverseAttention(filters=64, kernel_size=(3, 3), branch='ssmap', name="RA_test")
     # first call to the `ra` will create weights
 
     sm = tf.ones(shape=(8, 44, 44, 1))
