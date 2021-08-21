@@ -31,14 +31,13 @@ class WBCEIOULoss(tf.keras.losses.Loss):
     @tf.function
     def call(self, y_mask: tf.Tensor, y_pred: tf.Tensor):
         bce_iou_weights = 1 + 5 * \
-            tf.abs(tf.nn.avg_pool2d(y_mask, ksize=27,
+            tf.abs(tf.nn.avg_pool2d(y_mask, ksize=31,
                    strides=1, padding="SAME")-y_mask)
 
         # weighted BCE loss
-        wbce_loss = tf.nn.sigmoid_cross_entropy_with_logits(
-            labels=y_mask, logits=y_pred)
+        bce_loss = tf.keras.losses.BinaryCrossentropy(from_logits=True)(y_mask, y_pred)
         wbce_loss = tf.reduce_sum(
-            wbce_loss*bce_iou_weights, axis=(1, 2)) / tf.reduce_sum(bce_iou_weights, axis=(1, 2))
+            bce_loss*bce_iou_weights, axis=(1, 2)) / tf.reduce_sum(bce_iou_weights, axis=(1, 2))
 
         # weighted IOU loss
         y_pred = tf.sigmoid(y_pred)
