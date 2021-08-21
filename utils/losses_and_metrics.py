@@ -110,7 +110,7 @@ class DiceCoef(tf.keras.metrics.Metric):
         return super().from_config(config)
 
 
-def dice_coef(y_mask: tf.Tensor, y_pred: tf.Tensor):
+def dice_coef(y_mask: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
     smooth = 1e-15
     y_pred = tf.sigmoid(y_pred)
     y_pred = tf.cast(tf.math.greater(y_pred, 0.5), tf.float32)

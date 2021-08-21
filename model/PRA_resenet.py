@@ -103,7 +103,7 @@ class PRAresnet(tf.keras.Model):
         self, 
         optimizer: tf.keras.optimizers.Optimizer, 
         loss: tf.keras.losses.Loss, 
-        metric: function,
+        metric,
         loss_weights: list = [1,1,1,1],
         **kwargs
     ):
