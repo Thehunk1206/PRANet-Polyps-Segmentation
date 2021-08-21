@@ -32,14 +32,15 @@ from model.backbone import FE_backbone
 
 
 class PRAresnet(tf.keras.Model):
-    def __init__(self, IMG_H: int = 352, IMG_W: int = 352, filters: int = 32, **kwargs):
+    def __init__(self, IMG_H: int = 352, IMG_W: int = 352, filters: int = 32, backbone_trainable: bool = True, **kwargs):
         super(PRAresnet, self).__init__(**kwargs)
         self.IMG_H = IMG_H
         self.IMG_W = IMG_W
         self.filters = filters
+        self.backbone_trainable = backbone_trainable
 
         # pretrained resnet
-        self.fe_backbone = FE_backbone(inshape=(self.IMG_H, self.IMG_W, 3))
+        self.fe_backbone = FE_backbone(inshape=(self.IMG_H, self.IMG_W, 3), is_trainable=self.backbone_trainable )
         self.resnet = self.fe_backbone.get_fe_backbone()
 
         # Receptive field blocks
@@ -102,8 +103,7 @@ class PRAresnet(tf.keras.Model):
     def compile(
         self, 
         optimizer: tf.keras.optimizers.Optimizer, 
-        loss: tf.keras.losses.Loss, 
-        metric,
+        loss: tf.keras.losses.Loss,
         loss_weights: list = [1,1,1,1],
         **kwargs
     ):
@@ -111,7 +111,6 @@ class PRAresnet(tf.keras.Model):
         assert len(loss_weights) == 4
         self.optim = optimizer
         self.loss_fn = loss
-        self.metric = metric
         self.loss_weights = loss_weights
 
     @tf.function
@@ -133,10 +132,7 @@ class PRAresnet(tf.keras.Model):
 
         self.optim.apply_gradients(zip(grads, self.trainable_variables))
 
-        # update metrics
-        train_metric = self.metric(y_mask, lateral_out_s2)
-
-        return train_loss, train_metric
+        return train_loss
     
     @tf.function
     def test_step(self, x_img: tf.Tensor, y_mask: tf.Tensor):
@@ -148,10 +144,9 @@ class PRAresnet(tf.keras.Model):
 
         val_loss = (self.loss_weights[0]*loss1) + (self.loss_weights[1]*loss2) + \
                             (self.loss_weights[2]*loss3) + (self.loss_weights[-1]*loss4)
-                            
-        val_metric =  self.metric(y_mask, lateral_out_s2)
+    
 
-        return val_loss, val_metric
+        return val_loss
 
 
     def build_graph(self, inshape:tuple) -> tf.keras.Model:

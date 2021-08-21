@@ -30,7 +30,7 @@ import sys
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
-from utils.losses_and_metrics import WBCEIOULoss, dice_coef
+from utils.losses_and_metrics import WBCEIOULoss
 from utils.dataset import TfdataPipeline
 from model.PRA_resenet import PRAresnet
 import tensorflow as tf
@@ -40,8 +40,9 @@ def process_output(x: tf.Tensor):
     '''
     Post processing feature and output tensor that will be logged for Tensorboard
     '''
-    x = (x - tf.reduce_min(x)) / (tf.reduce_max(x) - tf.reduce_min(x))
-    x = tf.cast(tf.math.greater(x, 0.5), tf.float32)
+    # x = (x - tf.reduce_min(x)) / (tf.reduce_max(x) - tf.reduce_min(x))
+    # x = tf.cast(tf.math.greater(x, 0.5), tf.float32)
+    x = tf.sigmoid(x)
     x = x * 255.0
     return x
 
@@ -55,6 +56,7 @@ def train(
     lr: float = 1e-3,
     gclip: float = 1.0,
     dataset_split: float = 0.1,
+    backbone_trainable: bool = True,
     logdir: str = "logs/"
 ):
     assert os.path.isdir(dataset_dir)
@@ -94,36 +96,36 @@ def train(
     praresnet = PRAresnet(
         IMG_H=img_size,
         IMG_W=img_size,
-        filters=32
+        filters=32,
+        backbone_trainable=backbone_trainable
     )
 
     # compile the model
     praresnet.compile(
         optimizer=optimizer,
         loss=loss_fn,
-        metric=dice_coef,
     )
     tf.print(praresnet.build_graph(inshape=(img_size, img_size, 3)).summary())
     tf.print("==========Model configs==========")
     tf.print(
-        f"Training and validating PRAresnet for {epochs} epochs \nlearing_rate: {lr} \nInput shape:({img_size},{img_size},3) \nBatch size: {batch_size}"
+        f"Training and validating PRAresnet for {epochs} epochs \nlearing_rate: {lr} \nInput shape:({img_size},{img_size},3) \nBatch size: {batch_size} \nBackbone Trainable: {backbone_trainable}"
     )
     # train for epochs
     for e in range(epochs):
         t = time()
 
         for (x_train_img, y_train_mask) in tqdm(train_data, unit='steps', desc='training...', colour='red'):
-            train_loss, train_metric = praresnet.train_step(
+            train_loss = praresnet.train_step(
                 x_img=x_train_img, y_mask=y_train_mask, gclip=gclip)
 
         for (x_val_img, y_val_mask) in tqdm(val_data, unit='steps', desc='Validating...', colour='green'):
-            val_loss, val_metric = praresnet.test_step(x_img=x_val_img, y_mask=y_val_mask)
+            val_loss = praresnet.test_step(x_img=x_val_img, y_mask=y_val_mask)
 
         tf.print(
-            "ETA:{} - epoch: {} - loss: {} - dice: {} - val_loss: {} - val_dice: {}\n".format(
-                round((time() - t)/60, 2), (e+1), train_loss, float(train_metric), val_loss, float(val_metric)
+            "ETA:{} - epoch: {} - loss: {} - val_loss: {} \n".format(
+                round((time() - t)/60, 2), (e+1), train_loss, val_loss)
             )
-        )
+        
 
         tf.print("Writing to Tensorboard...")
         lateral_out_sg, lateral_out_s4, lateral_out_s3, lateral_out_s2 = praresnet(x_val_img, training=False)
@@ -134,11 +136,9 @@ def train(
 
         with train_writer.as_default():
             tf.summary.scalar(name='train_loss', data=train_loss, step=e+1)
-            tf.summary.scalar(name='dice', data=train_metric, step=e+1)
         
         with val_writer.as_default():
             tf.summary.scalar(name='val_loss', data=val_loss, step=e+1)
-            tf.summary.scalar(name='val_dice', data=val_metric, step=e+1)
             tf.summary.image(name='Y_mask', data=y_val_mask*255, step=e+1, max_outputs=batch_size, description='Val data')
             tf.summary.image(name='Global S Map', data=lateral_out_sg, step=e+1, max_outputs=batch_size, description='Val data')
             tf.summary.image(name='S4 Map', data=lateral_out_s4, step=e+1, max_outputs=batch_size, description='Val data')
@@ -162,6 +162,8 @@ if __name__ == "__main__":
                         default=352, help='input image size')
     parser.add_argument('--gclip', type=float,
                         default=1.0, help='gradient clipping margin')
+    parser.add_argument('--trainable_backbone', type=bool,
+                        default=True)
     parser.add_argument('--trained_model_path', type=str,
                         default='trained_model/')
     parser.add_argument('--logdir', type=str, help="Tensorboard logs",
@@ -178,5 +180,6 @@ if __name__ == "__main__":
         gclip=opt.gclip,
         trained_model_dir=opt.trained_model_path,
         dataset_split=opt.data_split,
+        backbone_trainable=opt.trainable_backbone,
         logdir=opt.logdir
     )
