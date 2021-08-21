@@ -36,6 +36,15 @@ from model.PRA_resenet import PRAresnet
 import tensorflow as tf
 
 
+def process_output(x: tf.Tensor):
+    '''
+    Post processing feature and output tensor that will be logged for Tensorboard
+    '''
+    x = (x - tf.reduce_min(x)) / (tf.reduce_max(x) - tf.reduce_min(x))
+    x = tf.cast(tf.math.greater(x, 0.5), tf.float32)
+    x = x * 255.0
+
+
 def train(
     dataset_dir: str,
     trained_model_dir: str,
@@ -123,11 +132,10 @@ def train(
 
         tf.print("Writing to Tensorboard...")
         lateral_out_sg, lateral_out_s4, lateral_out_s3, lateral_out_s2 = praresnet(x_val_img, training=False)
-        lateral_out_sg = tf.sigmoid(lateral_out_sg)
-        lateral_out_s4 = tf.sigmoid(lateral_out_s4)
-        lateral_out_s3 = tf.sigmoid(lateral_out_s3)
-        lateral_out_s2 = tf.sigmoid(lateral_out_s2)
-        lateral_out_s2 = tf.cast(tf.math.greater(lateral_out_s2, 0.5), tf.float32)
+        lateral_out_sg = process_output(lateral_out_sg)
+        lateral_out_s4 = process_output(lateral_out_s4)
+        lateral_out_s3 = process_output(lateral_out_s3)
+        lateral_out_s2 = process_output(lateral_out_s2)
 
         with train_writer.as_default():
             tf.summary.scalar(name='train_loss', data=train_loss, step=e+1)
@@ -137,10 +145,10 @@ def train(
             tf.summary.scalar(name='val_loss', data=val_loss, step=e+1)
             tf.summary.scalar(name='val_dice', data=val_metric.result(), step=e+1)
             tf.summary.image(name='Y_mask', data=y_val_mask*255, step=e+1, max_outputs=batch_size, description='Val data')
-            tf.summary.image(name='Global S Map', data=lateral_out_sg*255, step=e+1, max_outputs=batch_size, description='Val data')
-            tf.summary.image(name='S4 Map', data=lateral_out_s4*255, step=e+1, max_outputs=batch_size, description='Val data')
-            tf.summary.image(name='S3 Map', data=lateral_out_s3*255, step=e+1, max_outputs=batch_size, description='Val data')
-            tf.summary.image(name='S2 Map', data=lateral_out_s2*255, step=e+1, max_outputs=batch_size, description='Val data')
+            tf.summary.image(name='Global S Map', data=lateral_out_sg, step=e+1, max_outputs=batch_size, description='Val data')
+            tf.summary.image(name='S4 Map', data=lateral_out_s4, step=e+1, max_outputs=batch_size, description='Val data')
+            tf.summary.image(name='S3 Map', data=lateral_out_s3, step=e+1, max_outputs=batch_size, description='Val data')
+            tf.summary.image(name='S2 Map', data=lateral_out_s2, step=e+1, max_outputs=batch_size, description='Val data')
         
         train_metric.reset_states()
         val_metric.reset_states()
