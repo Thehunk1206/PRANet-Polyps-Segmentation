@@ -30,23 +30,22 @@ class WBCEIOULoss(tf.keras.losses.Loss):
 
     @tf.function
     def call(self, y_mask: tf.Tensor, y_pred: tf.Tensor):
-        bce_iou_weights = 1 + 5 * \
-            tf.abs(tf.nn.avg_pool2d(y_mask, ksize=31,
-                   strides=1, padding="SAME")-y_mask)
+        # bce_iou_weights = 1 + 5 * \
+        #     tf.abs(tf.nn.avg_pool2d(y_mask, ksize=31,
+        #            strides=1, padding="SAME")-y_mask)
 
         # weighted BCE loss
         bce_loss = tf.keras.losses.BinaryCrossentropy(from_logits=True)(y_mask, y_pred)
-        wbce_loss = tf.reduce_sum(
-            bce_loss*bce_iou_weights, axis=(1, 2)) / tf.reduce_sum(bce_iou_weights, axis=(1, 2))
+        # wbce_loss = tf.reduce_sum(
+        #     bce_loss*bce_iou_weights, axis=(1, 2)) / tf.reduce_sum(bce_iou_weights, axis=(1, 2))
 
         # weighted IOU loss
         y_pred = tf.sigmoid(y_pred)
-        inter = tf.reduce_sum((y_pred * y_mask) * bce_iou_weights, axis=(1, 2))
-        union = tf.reduce_sum((y_pred + y_mask) * bce_iou_weights, axis=(1, 2))
+        inter = tf.reduce_sum((y_pred * y_mask), axis=(1, 2))
+        union = tf.reduce_sum((y_pred + y_mask), axis=(1, 2))
         wiou_loss = 1 - (inter+1)/(union - inter+1)
 
-        weighted_bce_iou_loss = tf.reduce_mean(
-            wbce_loss + wiou_loss)
+        weighted_bce_iou_loss = tf.reduce_mean(bce_loss + wiou_loss)
         return weighted_bce_iou_loss
 
     def get_config(self):
