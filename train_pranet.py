@@ -30,7 +30,7 @@ import sys
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
-from utils.losses_and_metrics import WBCEIOULoss, DiceCoef
+from utils.losses_and_metrics import WBCEIOULoss, dice_coef
 from utils.dataset import TfdataPipeline
 from model.PRA_resenet import PRAresnet
 import tensorflow as tf
@@ -90,10 +90,6 @@ def train(
     # instantiate loss function
     loss_fn = WBCEIOULoss(name='w_bce_iou_loss')
 
-    # instantiate metric function
-    train_metric = DiceCoef(name='train_dice_coeff_metric')
-    val_metric = DiceCoef(name='val_dice_coeff_mettric')
-
     # instantiate model (PRAresnet)
     praresnet = PRAresnet(
         IMG_H=img_size,
@@ -105,8 +101,7 @@ def train(
     praresnet.compile(
         optimizer=optimizer,
         loss=loss_fn,
-        train_metric=train_metric,
-        val_metric=val_metric,
+        metric=dice_coef,
     )
     tf.print(praresnet.build_graph(inshape=(img_size, img_size, 3)).summary())
     tf.print("==========Model configs==========")
@@ -118,16 +113,16 @@ def train(
         t = time()
 
         for (x_train_img, y_train_mask) in tqdm(train_data, unit='steps', desc='training...', colour='red'):
-            train_loss = praresnet.train_step(
+            train_loss, train_metric = praresnet.train_step(
                 x_img=x_train_img, y_mask=y_train_mask, gclip=gclip)
 
         for (x_val_img, y_val_mask) in tqdm(val_data, unit='steps', desc='Validating...', colour='green'):
-            val_loss = praresnet.test_step(x_img=x_val_img, y_mask=y_val_mask)
+            val_loss, val_metric = praresnet.test_step(x_img=x_val_img, y_mask=y_val_mask)
 
+        outs = praresnet()
         tf.print(
             "ETA:{} - epoch: {} - loss: {} - dice: {} - val_loss: {} - val_dice: {}\n".format(
-                round((time() - t)/60, 2), (e+1), train_loss, float(
-                    train_metric.result()), val_loss, float(val_metric.result())
+                round((time() - t)/60, 2), (e+1), train_loss, float(train_metric), val_loss, float(val_metric)
             )
         )
 
@@ -140,19 +135,16 @@ def train(
 
         with train_writer.as_default():
             tf.summary.scalar(name='train_loss', data=train_loss, step=e+1)
-            tf.summary.scalar(name='dice', data=train_metric.result(), step=e+1)
+            tf.summary.scalar(name='dice', data=train_metric, step=e+1)
         
         with val_writer.as_default():
             tf.summary.scalar(name='val_loss', data=val_loss, step=e+1)
-            tf.summary.scalar(name='val_dice', data=val_metric.result(), step=e+1)
+            tf.summary.scalar(name='val_dice', data=val_metric, step=e+1)
             tf.summary.image(name='Y_mask', data=y_val_mask*255, step=e+1, max_outputs=batch_size, description='Val data')
             tf.summary.image(name='Global S Map', data=lateral_out_sg, step=e+1, max_outputs=batch_size, description='Val data')
             tf.summary.image(name='S4 Map', data=lateral_out_s4, step=e+1, max_outputs=batch_size, description='Val data')
             tf.summary.image(name='S3 Map', data=lateral_out_s3, step=e+1, max_outputs=batch_size, description='Val data')
             tf.summary.image(name='S2 Map', data=lateral_out_s2, step=e+1, max_outputs=batch_size, description='Val data')
-        
-        train_metric.reset_states()
-        val_metric.reset_states()
 
 
 if __name__ == "__main__":

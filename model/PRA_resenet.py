@@ -103,8 +103,7 @@ class PRAresnet(tf.keras.Model):
         self, 
         optimizer: tf.keras.optimizers.Optimizer, 
         loss: tf.keras.losses.Loss, 
-        train_metric: tf.keras.metrics.Metric,
-        val_metric: tf.keras.metrics.Metric,
+        metric: function,
         loss_weights: list = [1,1,1,1],
         **kwargs
     ):
@@ -112,8 +111,7 @@ class PRAresnet(tf.keras.Model):
         assert len(loss_weights) == 4
         self.optim = optimizer
         self.loss_fn = loss
-        self.train_metric = train_metric
-        self.val_metric = val_metric
+        self.metric = metric
         self.loss_weights = loss_weights
 
     @tf.function
@@ -136,9 +134,9 @@ class PRAresnet(tf.keras.Model):
         self.optim.apply_gradients(zip(grads, self.trainable_variables))
 
         # update metrics
-        self.train_metric.update_state(y_mask, lateral_out_s2)
+        train_metric = self.metric(y_mask, lateral_out_s2)
 
-        return train_loss
+        return train_loss, train_metric
     
     @tf.function
     def test_step(self, x_img: tf.Tensor, y_mask: tf.Tensor):
@@ -151,9 +149,9 @@ class PRAresnet(tf.keras.Model):
         val_loss = (self.loss_weights[0]*loss1) + (self.loss_weights[1]*loss2) + \
                             (self.loss_weights[2]*loss3) + (self.loss_weights[-1]*loss4)
                             
-        self.val_metric.update_state(y_mask, lateral_out_s2)
+        val_metric =  self.metric(y_mask, lateral_out_s2)
 
-        return val_loss
+        return val_loss, val_metric
 
 
     def build_graph(self, inshape:tuple) -> tf.keras.Model:

@@ -35,7 +35,8 @@ class WBCEIOULoss(tf.keras.losses.Loss):
                    strides=1, padding="SAME")-y_mask)
 
         # weighted BCE loss
-        bce_loss = tf.keras.losses.BinaryCrossentropy(from_logits=True)(y_mask, y_pred)
+        bce_loss = tf.keras.losses.BinaryCrossentropy(
+            from_logits=True)(y_mask, y_pred)
         wbce_loss = tf.reduce_sum(
             bce_loss*bce_iou_weights, axis=(1, 2)) / tf.reduce_sum(bce_iou_weights, axis=(1, 2))
 
@@ -88,8 +89,9 @@ class DiceCoef(tf.keras.metrics.Metric):
         smooth = 1e-15
         y_pred = tf.sigmoid(y_pred)
         y_pred = tf.cast(tf.math.greater(y_pred, 0.5), tf.float32)
-        intersection = tf.squeeze(tf.reduce_sum(tf.multiply(y_mask, y_pred), axis=(1,2)))
-        union = tf.reduce_sum((y_mask + y_pred), axis=(1,2)) + smooth
+        intersection = tf.squeeze(tf.reduce_sum(
+            tf.multiply(y_mask, y_pred), axis=(1, 2)))
+        union = tf.reduce_sum((y_mask + y_pred), axis=(1, 2)) + smooth
         dice = tf.reduce_mean(((2*intersection) / union))
 
         self.dice_coef.assign(dice)
@@ -108,6 +110,18 @@ class DiceCoef(tf.keras.metrics.Metric):
         return super().from_config(config)
 
 
+def dice_coef(y_mask: tf.Tensor, y_pred: tf.Tensor):
+    smooth = 1e-15
+    y_pred = tf.sigmoid(y_pred)
+    y_pred = tf.cast(tf.math.greater(y_pred, 0.5), tf.float32)
+    intersection = tf.squeeze(tf.reduce_sum(
+        tf.multiply(y_mask, y_pred), axis=(1, 2)))
+    union = tf.reduce_sum((y_mask + y_pred), axis=(1, 2)) + smooth
+    dice = tf.reduce_mean(((2*intersection) / union))
+
+    return dice
+
+
 if __name__ == "__main__":
     from visualize_bce_iou_loss_weigth import read_mask
 
@@ -116,7 +130,7 @@ if __name__ == "__main__":
 
     loss_w_bce_iou = WBCEIOULoss(name='structure_loss')
     loss_ms_ssim = SSIMLoss(name='SSIM_loss')
-    dice_metric = DiceCoef(name='dice metric')
+    # dice_metric = DiceCoef(name='dice metric')
 
     y_mask = read_mask(path_to_mask1)
     y_pred = read_mask(path_to_mask2)
@@ -126,10 +140,9 @@ if __name__ == "__main__":
 
     total_w_bce_iou_loss = loss_w_bce_iou(y_mask, y_pred)
     total_ssim_loss = loss_ms_ssim(y_mask, y_pred)
-    dice_metric.update_state(y_mask, y_pred)
+    # dice_metric.update_state(y_mask, y_pred)
+    dice_metric = dice_coef(y_mask, y_pred)
 
     print(f"w_bce_iou_loss: {total_w_bce_iou_loss}")
     print(f"SSIM loss: {total_ssim_loss}")
-    print(f"dice coef: {dice_metric.result()}")
-    dice_metric.reset_states()
-    print(f"dice coef after reset: {dice_metric.result()}")
+    print(f"dice coef: {dice_metric}")
