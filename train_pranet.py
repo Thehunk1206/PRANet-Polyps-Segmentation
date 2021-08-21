@@ -43,6 +43,7 @@ def process_output(x: tf.Tensor):
     x = (x - tf.reduce_min(x)) / (tf.reduce_max(x) - tf.reduce_min(x))
     x = tf.cast(tf.math.greater(x, 0.5), tf.float32)
     x = x * 255.0
+     return x
 
 
 def train(
