@@ -119,7 +119,6 @@ def train(
         for (x_val_img, y_val_mask) in tqdm(val_data, unit='steps', desc='Validating...', colour='green'):
             val_loss, val_metric = praresnet.test_step(x_img=x_val_img, y_mask=y_val_mask)
 
-        outs = praresnet()
         tf.print(
             "ETA:{} - epoch: {} - loss: {} - dice: {} - val_loss: {} - val_dice: {}\n".format(
                 round((time() - t)/60, 2), (e+1), train_loss, float(train_metric), val_loss, float(val_metric)
