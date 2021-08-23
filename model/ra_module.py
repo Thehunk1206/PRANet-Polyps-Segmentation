@@ -80,8 +80,8 @@ class ReverseAttention(tf.keras.layers.Layer):
         return config
 
     @classmethod
-    def from_config(cls, **config):
-        return super().from_config(**config)
+    def from_config(cls, config):
+        return super().from_config(config)
 
 
 if __name__ == "__main__":

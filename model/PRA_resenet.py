@@ -148,6 +148,17 @@ class PRAresnet(tf.keras.Model):
 
         return val_loss
 
+    def get_config(self):
+        return {
+            "IMG_H": self.IMG_H,
+            "IMG_W": self.IMG_W,
+            "filters": self.filters,
+            "backbone_trainable": self.backbone_trainable
+        }
+    
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
 
     def build_graph(self, inshape:tuple) -> tf.keras.Model:
         '''

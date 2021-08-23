@@ -28,7 +28,7 @@ from tqdm import tqdm
 import argparse
 import sys
 import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from utils.losses_and_metrics import WBCEIOULoss
 from utils.dataset import TfdataPipeline
@@ -147,10 +147,12 @@ def train(
             tf.summary.image(name='S3 Map', data=lateral_out_s3, step=e+1, max_outputs=batch_size, description='Val data')
             tf.summary.image(name='S2 Map', data=lateral_out_s2, step=e+1, max_outputs=batch_size, description='Val data')
         
-        # tf.print(
-        #     f"Saving model at {trained_model_dir}..."
-        # )
-        # praresnet.save(trained_model_dir + "pranet_v1", save_format='tf')
+        if e%5 == 0:
+            tf.print(
+                f"Saving model at {trained_model_dir}..."
+            )
+            praresnet.save(trained_model_dir + "pranet_v1", save_format='tf')
+            tf.print(f"model saved at {trained_model_dir}")
         
 
 if __name__ == "__main__":
@@ -169,8 +171,6 @@ if __name__ == "__main__":
                         default=352, help='input image size')
     parser.add_argument('--gclip', type=float,
                         default=1.0, help='gradient clipping margin')
-    parser.add_argument('--trainable_backbone', type=bool,
-                        default=True)
     parser.add_argument('--trained_model_path', type=str,
                         default='trained_model/')
     parser.add_argument('--logdir', type=str, help="Tensorboard logs",

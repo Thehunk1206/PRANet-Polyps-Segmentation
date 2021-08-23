@@ -75,7 +75,7 @@ class PartialDecoder(tf.keras.layers.Layer):
 
     @classmethod
     def from_config(cls, config):
-        return super().from_config(**config)
+        return super().from_config(config)
 
 
 # test the module
