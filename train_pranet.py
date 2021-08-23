@@ -147,10 +147,10 @@ def train(
             tf.summary.image(name='S3 Map', data=lateral_out_s3, step=e+1, max_outputs=batch_size, description='Val data')
             tf.summary.image(name='S2 Map', data=lateral_out_s2, step=e+1, max_outputs=batch_size, description='Val data')
         
-        tf.print(
-            f"Saving model at {trained_model_dir}..."
-        )
-        praresnet.save(trained_model_dir + "pranet_v1", save_format='tf')
+        # tf.print(
+        #     f"Saving model at {trained_model_dir}..."
+        # )
+        # praresnet.save(trained_model_dir + "pranet_v1", save_format='tf')
         
 
 if __name__ == "__main__":
@@ -187,6 +187,6 @@ if __name__ == "__main__":
         gclip=opt.gclip,
         trained_model_dir=opt.trained_model_path,
         dataset_split=opt.data_split,
-        backbone_trainable=False,
+        backbone_trainable=True,
         logdir=opt.logdir
     )

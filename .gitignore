@@ -1,7 +1,7 @@
 logs/
 polyps_dataset/
 sampleImages/
-Trained model/
+trained model/
 __pycache__/
 .ipynb_checkpoints/
 Illustrations/*.drawio
