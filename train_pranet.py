@@ -30,7 +30,7 @@ import sys
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-from utils.losses_and_metrics import WBCEIOULoss
+from utils.losses_and_metrics import WBCEDICELoss
 from utils.dataset import TfdataPipeline
 from model.PRA_resenet import PRAresnet
 import tensorflow as tf
@@ -91,7 +91,7 @@ def train(
     )
 
     # instantiate loss function
-    loss_fn = WBCEIOULoss(name='w_bce_iou_loss')
+    loss_fn = WBCEDICELoss(name='w_bce_dice_loss')
 
     # instantiate model (PRAresnet)
     praresnet = PRAresnet(
@@ -133,7 +133,7 @@ def train(
         lateral_out_sg = process_output(lateral_out_sg)
         lateral_out_s4 = process_output(lateral_out_s4)
         lateral_out_s3 = process_output(lateral_out_s3)
-        lateral_out_s2 = process_output(lateral_out_s2, threshold = 0.5)
+        lateral_out_s2 = process_output(lateral_out_s2, threshold = 0.3)
 
 
         with train_writer.as_default():
@@ -147,7 +147,7 @@ def train(
             tf.summary.image(name='S3 Map', data=lateral_out_s3, step=e+1, max_outputs=batch_size, description='Val data')
             tf.summary.image(name='S2 Map', data=lateral_out_s2, step=e+1, max_outputs=batch_size, description='Val data')
         
-        if e%5 == 0:
+        if (e+1)%5 == 0:
             tf.print(
                 f"Saving model at {trained_model_dir}..."
             )
