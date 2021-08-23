@@ -27,7 +27,7 @@ from model.conv_module import ConvModule
 
 
 class RFB(tf.keras.layers.Layer):
-    def __init__(self, filters: int, name:str):
+    def __init__(self, filters: int, name: str):
         super(RFB, self).__init__(name=name)
         self.filters = filters
 
@@ -67,6 +67,7 @@ class RFB(tf.keras.layers.Layer):
         self.relu = tf.keras.layers.ReLU()
 
     def call(self, inputs: tf.Tensor) -> tf.Tensor:
+        inputs = tf.nn.relu(inputs)
         x1 = self.branch_1(inputs)
         x2 = self.branch_2(inputs)
         x3 = self.branch_3(inputs)

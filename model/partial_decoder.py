@@ -47,6 +47,10 @@ class PartialDecoder(tf.keras.layers.Layer):
         self.conv5 = tf.keras.layers.Conv2D(filters=1, kernel_size=(1, 1))
 
     def call(self, rfb_feat1: tf.Tensor, rfb_feat2: tf.Tensor, rfb_feat3: tf.Tensor) -> tf.Tensor:
+        rfb_feat1 = tf.nn.relu(rfb_feat1)
+        rfb_feat2 = tf.nn.relu(rfb_feat2)
+        rfb_feat3 = tf.nn.relu(rfb_feat3)
+
         x1_1 = rfb_feat1
         x2_1 = self.conv_up1(self.upsampling(rfb_feat1)) * rfb_feat2
         x3_1 = self.conv_up2(self.upsampling(self.upsampling(rfb_feat1)))  \

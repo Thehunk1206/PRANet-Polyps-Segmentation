@@ -36,11 +36,14 @@ from model.PRA_resenet import PRAresnet
 import tensorflow as tf
 
 
-def process_output(x: tf.Tensor):
+def process_output(x: tf.Tensor, threshold:float = None):
     '''
     Post processing feature and output tensor that will be logged for Tensorboard
     '''
+
     x = tf.sigmoid(x)
+    if threshold:
+        x = tf.cast(tf.math.greater(x, threshold), tf.float32)
     x = x * 255.0
     return x
 
@@ -130,8 +133,7 @@ def train(
         lateral_out_sg = process_output(lateral_out_sg)
         lateral_out_s4 = process_output(lateral_out_s4)
         lateral_out_s3 = process_output(lateral_out_s3)
-        lateral_out_s2 = process_output(lateral_out_s2)
-        lateral_out_s2 = tf.cast(tf.math.greater(lateral_out_s2, 0.5), tf.float32)
+        lateral_out_s2 = process_output(lateral_out_s2, threshold = 0.5)
 
 
         with train_writer.as_default():
@@ -144,7 +146,12 @@ def train(
             tf.summary.image(name='S4 Map', data=lateral_out_s4, step=e+1, max_outputs=batch_size, description='Val data')
             tf.summary.image(name='S3 Map', data=lateral_out_s3, step=e+1, max_outputs=batch_size, description='Val data')
             tf.summary.image(name='S2 Map', data=lateral_out_s2, step=e+1, max_outputs=batch_size, description='Val data')
-
+        
+        tf.print(
+            f"Saving model at {trained_model_dir}..."
+        )
+        praresnet.save(trained_model_dir + "pranet_v1", save_format='tf')
+        
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -180,6 +187,6 @@ if __name__ == "__main__":
         gclip=opt.gclip,
         trained_model_dir=opt.trained_model_path,
         dataset_split=opt.data_split,
-        backbone_trainable=opt.trainable_backbone,
+        backbone_trainable=False,
         logdir=opt.logdir
     )
