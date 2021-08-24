@@ -152,7 +152,7 @@ def train(
             tf.print(
                 f"Saving model at {trained_model_dir}..."
             )
-            praresnet.save(trained_model_dir + "pranet_v1", save_format='tf')
+            praresnet.save(trained_model_dir + "pranet_v1.1", save_format='tf')
             tf.print(f"model saved at {trained_model_dir}")
         
 

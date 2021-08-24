@@ -98,7 +98,6 @@ if __name__ == "__main__":
 
     loss_w_bce_iou = WBCEDICELoss(name='structure_loss')
     loss_ms_ssim = SSIMLoss(name='SSIM_loss')
-    # dice_metric = DiceCoef(name='dice metric')
 
     y_mask = read_mask(path_to_mask1)
     y_pred = read_mask(path_to_mask2)
@@ -108,7 +107,6 @@ if __name__ == "__main__":
 
     total_w_bce_dice_loss = loss_w_bce_iou(y_mask, y_pred)
     total_ssim_loss = loss_ms_ssim(y_mask, y_pred)
-    # dice_metric.update_state(y_mask, y_pred)
     dice_metric = dice_coef(y_mask, y_pred)
 
     print(f"w_bce_iou_loss: {total_w_bce_dice_loss}")

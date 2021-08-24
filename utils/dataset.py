@@ -84,11 +84,9 @@ class TfdataPipeline:
         img = tf.io.decode_jpeg(img_raw)
         mask = tf.io.decode_jpeg(mask_raw, channels=1)
 
-        img = tf.image.convert_image_dtype(img, tf.float32)
-        img = img/255.0
+        img = tf.image.convert_image_dtype(img, tf.float32) # normalize the values between 0-1
 
-        mask = tf.image.convert_image_dtype(mask, tf.float32)
-        mask = mask/255.0
+        mask = tf.image.convert_image_dtype(mask, tf.float32) # normalize the values between 0-1
 
         img = tf.image.resize(img, [self.IMG_H, self.IMG_W])
         mask = tf.image.resize(mask, [self.IMG_H, self.IMG_W])
