@@ -78,6 +78,38 @@ class SSIMLoss(tf.keras.losses.Loss):
         return super().from_config(config)
 
 
+class DiceCoef(tf.keras.metrics.Metric):
+
+    def __init__(self, name: str, **kwargs):
+        super(DiceCoef, self).__init__(name=name, **kwargs)
+        self.dice_coef = self.add_weight(
+            name='Dice Coefficient', initializer='zeros')
+
+    def update_state(self, y_mask: tf.Tensor, y_pred: tf.Tensor, **kwargs):
+        smooth = 1e-15
+        y_pred = tf.sigmoid(y_pred)
+        y_pred = tf.cast(tf.math.greater(y_pred, 0.5), tf.float32)
+        intersection = tf.squeeze(tf.reduce_sum(
+            tf.multiply(y_mask, y_pred), axis=(1, 2)))
+        union = tf.reduce_sum((y_mask + y_pred), axis=(1, 2)) + smooth
+        dice = tf.reduce_mean(((2*intersection) / union))
+
+        self.dice_coef.assign(dice)
+
+    def result(self):
+        return self.dice_coef
+
+    def reset_states(self):
+        self.dice_coef.assign(0.0)
+
+    def get_config(self):
+        return super().get_config()
+
+    @classmethod
+    def from_config(cls, config):
+        return super().from_config(config)
+
+
 def dice_coef(y_mask: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
     smooth = 1e-15
     y_pred = tf.sigmoid(y_pred)
@@ -109,6 +141,6 @@ if __name__ == "__main__":
     total_ssim_loss = loss_ms_ssim(y_mask, y_pred)
     dice_metric = dice_coef(y_mask, y_pred)
 
-    print(f"w_bce_iou_loss: {total_w_bce_dice_loss}")
+    print(f"w_bce_dice_loss: {total_w_bce_dice_loss}")
     print(f"SSIM loss: {total_ssim_loss}")
     print(f"dice coef: {dice_metric}")
