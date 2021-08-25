@@ -45,9 +45,18 @@ def read_image(path: str, img_size: int = 352) -> tf.Tensor:
     return resized_image, original_image
 
 
-def process_output(x: tf.Tensor, threshold: float = 0.5) -> tf.Tensor:
+def process_output(x: tf.Tensor, original_img: tf.Tensor, threshold: float = None) -> tf.Tensor:
     x = tf.sigmoid(x)
-    x = tf.cast(tf.math.greater(x, threshold), tf.float32)
+
+    if threshold:
+        x = tf.cast(tf.math.greater(x, threshold), tf.float32)
+    
+    x = tf.squeeze(x, axis=0)
+    x = tf.image.resize(x, [original_img.shape[0], original_img.shape[1]], ResizeMethod.BICUBIC)
+    # we use tf.tile to make multiple copy of output single channel image
+    mutiple_const = tf.constant([1,1,3]) # [1,1,3] h(1)xw(1)xc(3)
+    x = tf.tile(x,mutiple_const)
+    
     return x
 
 
@@ -65,28 +74,43 @@ def get_model(model_path: str):
     return model
 
 
-def vis_predicted_mask(image: tf.Tensor, pred: tf.Tensor):
+def vis_predicted_mask(*images: tf.Tensor):
     plt.figure(figsize=(20, 10))
-    grid_spec = gridspec.GridSpec(1, 3, width_ratios=[5, 5, 5])
+    grid_spec = gridspec.GridSpec(2, 3, width_ratios=[3, 3, 3, 3, 3, 3, 3, 3])
 
-    plt.subplot(grid_spec[0])
-    plt.imshow(image)
+    plt.subplot(grid_spec[0][0])
+    plt.imshow(images[0])
     plt.axis('off')
     plt.title("Original Image")
 
-    plt.subplot(grid_spec[1])
-    plt.imshow(pred)
+    plt.subplot(grid_spec[0][1])
+    plt.imshow(images[1])
     plt.axis('off')
     plt.title("Predicted mask")
 
-    plt.subplot(grid_spec[2])
-    plt.imshow(image)
-    plt.imshow(pred, alpha=0.6)
+    plt.subplot(grid_spec[0][2])
+    plt.imshow(images[0])
+    plt.imshow(images[1], alpha=0.6)
     plt.axis('off')
     plt.title("Image +  Predicted Mask")
 
+    plt.subplot(grid_spec[1][0])
+    plt.imshow(images[2])
+    plt.axis('off')
+    plt.title("Global S Map")
+
+    plt.subplot(grid_spec[1][1])
+    plt.imshow(images[3])
+    plt.axis('off')
+    plt.title("Side Map 4")
+
+    plt.subplot(grid_spec[1][2])
+    plt.imshow(images[4])
+    plt.axis('off')
+    plt.title("Side Map 3")
+
     plt.grid('off')
-    plt.savefig(f"detection {time()}.jpg")
+    plt.savefig(f"detection_{time()}.jpg")
 
 
 def run(
@@ -106,19 +130,18 @@ def run(
     start = time()
     outs = pranet(input_image)
     end = time()
-    final_out = outs[-1]
-    final_out = process_output(final_out, threshold=0.5)
+    sg, s4, s3, final_out = outs
+    final_out = process_output(final_out, original_img=original_image, threshold=0.5)
+    sg = process_output(sg, original_img=original_image)
+    s4 = process_output(s4, original_img=original_image)
+    s3 = process_output(s3, original_img=original_image)
+
 
     total_time = round((end - start)*1000, ndigits=2)
     tf.print(f"Total runtime of model: {total_time}ms")
 
-    final_out = tf.squeeze(final_out, axis=0)
-    final_out = tf.image.resize(final_out, [original_image.shape[0], original_image.shape[1]], ResizeMethod.BICUBIC)
-    # we use tf.tile to make multiple copy of output single channel image
-    mutiple_const = tf.constant([1,1,3]) # [1,1,3] h(1)xw(1)xc(3)
-    final_out = tf.tile(final_out,mutiple_const)
 
-    vis_predicted_mask(image=original_image, pred=final_out)
+    vis_predicted_mask(original_image, final_out, sg, s4, s3)
 
 if __name__ == "__main__":
     __description__ = '''
