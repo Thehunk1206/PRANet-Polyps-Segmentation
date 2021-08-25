@@ -86,7 +86,7 @@ def vis_predicted_mask(image: tf.Tensor, pred: tf.Tensor):
     plt.title("Image +  Predicted Mask")
 
     plt.grid('off')
-    plt.savefig(f"detection {time()}")
+    plt.savefig(f"detection {time()}.jpg")
 
 
 def run(
