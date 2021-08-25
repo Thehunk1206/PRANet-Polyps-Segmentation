@@ -1,3 +1,27 @@
+'''
+MIT License
+
+Copyright (c) 2020 Tauhid Khan
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+'''
+
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
@@ -19,7 +43,7 @@ def get_model(model_path: str):
     tf.print(
         "[info] loading model from disk...."
     )
-    model = models.load_model("trained_model/pranet_v1.1")
+    model = models.load_model(model_path)
 
     tf.print(
         "loaded model {}".format(model)
@@ -43,7 +67,7 @@ def run_test(
     dataset_path:str='polyps_dataset/'
 ):
     pranet = get_model(model_path=model_path)
-    test_data = datapipeline(dataset_path=dataset_path, imgsize=352)
+    test_data = datapipeline(dataset_path=dataset_path, imgsize=imgsize)
 
     dice_coefs = []
     runtimes = []
