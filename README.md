@@ -2,9 +2,9 @@
 proper documentation comming soon.
 
 ## Dataset source
-* [Polyp grand challenge](https://polyp.grand-challenge.org/EtisLarib/)
+* [Kvasir SEG dataset](https://datasets.simula.no/kvasir-seg/)
 
-## citation
+# citation
 Paper
 ```
 @article{fan2020pra,
@@ -17,8 +17,13 @@ year={2020}
 
 Datset
 ```
-Juan S. Silva, Aymeric Histace, Olivier Romain, Xavier Dray, Bertrand Granado,
-Towards embedded detection of polyps in WCE images for early diagnosis of colorectal cancer.
-International Journal of Computer Assisted Radiology and Surgery, 
-Springer Verlag (Germany), 2014, 9 (2), pp. 283-293.
+@inproceedings{jha2020kvasir,
+title={Kvasir-seg: A segmented polyp dataset},
+author={Jha, Debesh and Smedsrud, Pia H and Riegler, Michael A and Halvorsen, P{\aa}l and
+de Lange, Thomas and Johansen, Dag and Johansen, H{\aa}vard D},
+booktitle={International Conference on Multimedia Modeling},
+pages={451--462},
+year={2020},
+organization={Springer}
+}
 ```
