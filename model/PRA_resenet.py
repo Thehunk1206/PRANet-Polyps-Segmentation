@@ -151,7 +151,7 @@ class PRAresnet(tf.keras.Model):
         val_loss = (self.loss_weights[0]*loss1) + (self.loss_weights[1]*loss2) + \
                             (self.loss_weights[2]*loss3) + (self.loss_weights[-1]*loss4)
 
-        self.train_metric.update_state(y_mask,lateral_out_s2)
+        self.val_metric.update_state(y_mask,lateral_out_s2)
         
         return val_loss
 
