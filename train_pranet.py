@@ -30,7 +30,7 @@ import sys
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-from utils.losses_and_metrics import WBCEDICELoss
+from utils.losses_and_metrics import WBCEDICELoss, DiceCoef
 from utils.dataset import TfdataPipeline
 from model.PRA_resenet import PRAresnet
 import tensorflow as tf
@@ -93,6 +93,9 @@ def train(
 
     # instantiate loss function
     loss_fn = WBCEDICELoss(name='w_bce_dice_loss')
+    train_metric = DiceCoef(name='train_dice_metric')
+    val_metric = DiceCoef(name='val_dice_metric')
+
 
     # instantiate model (PRAresnet)
     praresnet = PRAresnet(
@@ -106,6 +109,8 @@ def train(
     praresnet.compile(
         optimizer=optimizer,
         loss=loss_fn,
+        train_metric=train_metric,
+        val_metric=val_metric
     )
     tf.print(praresnet.build_graph(inshape=(img_size, img_size, 3)).summary())
     tf.print("==========Model configs==========")
@@ -139,9 +144,11 @@ def train(
 
         with train_writer.as_default():
             tf.summary.scalar(name='train_loss', data=train_loss, step=e+1)
+            tf.summary.scalar(name='dice', data = train_metric.result(), step=e+1)
         
         with val_writer.as_default():
             tf.summary.scalar(name='val_loss', data=val_loss, step=e+1)
+            tf.summary.scalar(name='val_dice', data=val_metric.result(), step=e+1)
             tf.summary.image(name='Y_mask', data=y_val_mask*255, step=e+1, max_outputs=batch_size, description='Val data')
             tf.summary.image(name='Global S Map', data=lateral_out_sg, step=e+1, max_outputs=batch_size, description='Val data')
             tf.summary.image(name='S4 Map', data=lateral_out_s4, step=e+1, max_outputs=batch_size, description='Val data')
@@ -152,9 +159,11 @@ def train(
             tf.print(
                 f"Saving model at {trained_model_dir}..."
             )
-            praresnet.save(trained_model_dir + "pranet_v1.1", save_format='tf')
+            praresnet.save(trained_model_dir + "pranet_v1.2", save_format='tf')
             tf.print(f"model saved at {trained_model_dir}")
-        
+
+        train_metric.reset_states()
+        val_metric.reset_states()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

@@ -2,7 +2,7 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 import argparse
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 from time import time
 
 from tensorflow.python.data.ops.dataset_ops import DatasetV2
@@ -48,24 +48,24 @@ def run_test(
     dice_coefs = []
     runtimes = []
 
-    for (image, mask) in tqdm(test_data):
+    for (image, mask) in tqdm(test_data, desc='Testing..', unit='steps', colour='green'):
         start = time()
         outs = pranet(image)
         end = time()
         final_out = tf.sigmoid(outs[-1])
         final_out = tf.cast(tf.math.greater(final_out, 0.5), tf.float32)
 
-        total_time = round((end - start)*1000, ndigits=3)
+        total_time = round((end - start)*1000, ndigits=2)
         dice = dice_coef(y_mask=mask, y_pred=final_out)
         dice_coefs.append(dice)
         runtimes.append(total_time)
     
-    mean_dice = sum(dice_coefs)/len(dice_coefs)
+    mean_dice = round(sum(dice_coefs)/len(dice_coefs),ndigits=2)
     mean_runtime = sum(runtimes)/ len(runtimes)
     tf.print(
-            f"Average runtime of model: {mean_runtime}\n",
+            f"Average runtime of model: {mean_runtime}ms\n",
             f"Mean Dice coef: {mean_dice}\n\n\n",
-            "NOTE: The runtime of model can be high at first run as it \ntake time cache the data in memory.\ntry to run the script again without closing the session"
+            "NOTE: The runtime of model can be high at first run as it \ntake time to cache the data in memory.\ntry to run the script again without closing the session"
         )
 
 

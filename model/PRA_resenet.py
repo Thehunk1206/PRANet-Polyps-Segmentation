@@ -104,6 +104,8 @@ class PRAresnet(tf.keras.Model):
         self, 
         optimizer: tf.keras.optimizers.Optimizer, 
         loss: tf.keras.losses.Loss,
+        train_metric: tf.keras.metrics.Metric,
+        val_metric: tf.keras.metrics.Metric,
         loss_weights: list = [1,1,1,1],
         **kwargs
     ):
@@ -111,6 +113,8 @@ class PRAresnet(tf.keras.Model):
         assert len(loss_weights) == 4
         self.optim = optimizer
         self.loss_fn = loss
+        self.train_metric = train_metric,
+        self.val_metric = val_metric,
         self.loss_weights = loss_weights
 
     @tf.function
@@ -131,6 +135,8 @@ class PRAresnet(tf.keras.Model):
                 for grad in grads]
 
         self.optim.apply_gradients(zip(grads, self.trainable_variables))
+        
+        self.train_metric.update_state(y_mask,lateral_out_s2)
 
         return train_loss
     
@@ -144,8 +150,9 @@ class PRAresnet(tf.keras.Model):
 
         val_loss = (self.loss_weights[0]*loss1) + (self.loss_weights[1]*loss2) + \
                             (self.loss_weights[2]*loss3) + (self.loss_weights[-1]*loss4)
-    
 
+        self.train_metric.update_state(y_mask,lateral_out_s2)
+        
         return val_loss
 
     def get_config(self):
