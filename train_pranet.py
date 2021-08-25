@@ -127,8 +127,8 @@ def train(
             val_loss, val_dice = praresnet.test_step(x_img=x_val_img, y_mask=y_val_mask)
 
         tf.print(
-            "ETA:{} - epoch: {} - loss: {} - val_loss: {} \n".format(
-                round((time() - t)/60, 2), (e+1), train_loss, val_loss)
+            "ETA:{} - epoch: {} - loss: {} - dice: {} - val_loss: {} - val_dice: {} \n".format(
+                round((time() - t)/60, 2), (e+1), train_loss,train_dice, val_loss, val_dice)
             )
         
 
