@@ -29,6 +29,7 @@ from model.ra_module import ReverseAttention
 from model.partial_decoder import PartialDecoder
 from model.rfb import RFB
 from model.backbone import FE_backbone
+from utils.losses_and_metrics import DiceCoef
 
 
 class PRAresnet(tf.keras.Model):
@@ -104,8 +105,8 @@ class PRAresnet(tf.keras.Model):
         self, 
         optimizer: tf.keras.optimizers.Optimizer, 
         loss: tf.keras.losses.Loss,
-        train_metric: tf.keras.metrics.Metric,
-        val_metric: tf.keras.metrics.Metric,
+        train_metric: DiceCoef,
+        val_metric: DiceCoef,
         loss_weights: list = [1,1,1,1],
         **kwargs
     ):
@@ -114,7 +115,7 @@ class PRAresnet(tf.keras.Model):
         self.optim = optimizer
         self.loss_fn = loss
         self.train_metric = train_metric,
-        self.val_metric = val_metric,
+        self.val_dice_metric = val_metric,
         self.loss_weights = loss_weights
 
     @tf.function
