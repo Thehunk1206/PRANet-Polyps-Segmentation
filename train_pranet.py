@@ -109,8 +109,6 @@ def train(
     praresnet.compile(
         optimizer=optimizer,
         loss=loss_fn,
-        train_metric=train_metric,
-        val_metric=val_metric
     )
     tf.print(praresnet.build_graph(inshape=(img_size, img_size, 3)).summary())
     tf.print("==========Model configs==========")
