@@ -29,7 +29,7 @@ from model.ra_module import ReverseAttention
 from model.partial_decoder import PartialDecoder
 from model.rfb import RFB
 from model.backbone import FE_backbone
-from utils.losses_and_metrics import DiceCoef
+from utils.losses_and_metrics import dice_coef
 
 
 class PRAresnet(tf.keras.Model):
@@ -105,8 +105,6 @@ class PRAresnet(tf.keras.Model):
         self, 
         optimizer: tf.keras.optimizers.Optimizer, 
         loss: tf.keras.losses.Loss,
-        train_metric: DiceCoef,
-        val_metric: DiceCoef,
         loss_weights: list = [1,1,1,1],
         **kwargs
     ):
@@ -114,8 +112,6 @@ class PRAresnet(tf.keras.Model):
         assert len(loss_weights) == 4
         self.optim = optimizer
         self.loss_fn = loss
-        self.train_metric = train_metric,
-        self.val_dice_metric = val_metric,
         self.loss_weights = loss_weights
 
     @tf.function
@@ -137,9 +133,9 @@ class PRAresnet(tf.keras.Model):
 
         self.optim.apply_gradients(zip(grads, self.trainable_variables))
         
-        self.train_metric.update_state(y_mask,lateral_out_s2)
+        train_dice = dice_coef(y_mask=y_mask, y_pred=lateral_out_s2)
 
-        return train_loss
+        return train_loss, train_dice
     
     @tf.function
     def test_step(self, x_img: tf.Tensor, y_mask: tf.Tensor):
@@ -152,9 +148,9 @@ class PRAresnet(tf.keras.Model):
         val_loss = (self.loss_weights[0]*loss1) + (self.loss_weights[1]*loss2) + \
                             (self.loss_weights[2]*loss3) + (self.loss_weights[-1]*loss4)
 
-        self.val_metric.update_state(y_mask,lateral_out_s2)
-        
-        return val_loss
+        val_dice = dice_coef(y_mask=y_mask, y_pred=lateral_out_s2)
+
+        return val_loss, val_dice
 
     def get_config(self):
         return {

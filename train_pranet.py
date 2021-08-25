@@ -122,11 +122,11 @@ def train(
         t = time()
 
         for (x_train_img, y_train_mask) in tqdm(train_data, unit='steps', desc='training...', colour='red'):
-            train_loss = praresnet.train_step(
+            train_loss, train_dice = praresnet.train_step(
                 x_img=x_train_img, y_mask=y_train_mask, gclip=gclip)
 
         for (x_val_img, y_val_mask) in tqdm(val_data, unit='steps', desc='Validating...', colour='green'):
-            val_loss = praresnet.test_step(x_img=x_val_img, y_mask=y_val_mask)
+            val_loss, val_dice = praresnet.test_step(x_img=x_val_img, y_mask=y_val_mask)
 
         tf.print(
             "ETA:{} - epoch: {} - loss: {} - val_loss: {} \n".format(
@@ -144,11 +144,11 @@ def train(
 
         with train_writer.as_default():
             tf.summary.scalar(name='train_loss', data=train_loss, step=e+1)
-            tf.summary.scalar(name='dice', data = train_metric.result(), step=e+1)
+            tf.summary.scalar(name='dice', data = train_dice, step=e+1)
         
         with val_writer.as_default():
             tf.summary.scalar(name='val_loss', data=val_loss, step=e+1)
-            tf.summary.scalar(name='val_dice', data=val_metric.result(), step=e+1)
+            tf.summary.scalar(name='val_dice', data=val_dice.result(), step=e+1)
             tf.summary.image(name='Y_mask', data=y_val_mask*255, step=e+1, max_outputs=batch_size, description='Val data')
             tf.summary.image(name='Global S Map', data=lateral_out_sg, step=e+1, max_outputs=batch_size, description='Val data')
             tf.summary.image(name='S4 Map', data=lateral_out_s4, step=e+1, max_outputs=batch_size, description='Val data')
@@ -162,8 +162,6 @@ def train(
             praresnet.save(trained_model_dir + "pranet_v1.2", save_format='tf')
             tf.print(f"model saved at {trained_model_dir}")
 
-        train_metric.reset_states()
-        val_metric.reset_states()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
