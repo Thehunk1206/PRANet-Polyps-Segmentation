@@ -76,7 +76,7 @@ def get_model(model_path: str):
 
 def vis_predicted_mask(*images: tf.Tensor):
     plt.figure(figsize=(20, 10))
-    grid_spec = gridspec.GridSpec(2, 3, width_ratios=[3, 3, 3, 3, 3, 3, 3, 3])
+    grid_spec = gridspec.GridSpec(2, 3, width_ratios=[3, 3, 3, 3, 3, 3])
 
     plt.subplot(grid_spec[0][0])
     plt.imshow(images[0])
