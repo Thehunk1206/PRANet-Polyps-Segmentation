@@ -21,18 +21,16 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
-
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-import tensorflow as tf
-from tensorflow.keras import models
 import argparse
 from time import time
 import os
-
-from tensorflow.python.ops.gen_array_ops import squeeze
-from tensorflow.python.ops.image_ops_impl import ResizeMethod
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+
+import tensorflow as tf
+from tensorflow.keras import models
+from tensorflow.python.ops.image_ops_impl import ResizeMethod
 
 
 def read_image(path: str, img_size: int = 352) -> tf.Tensor:
@@ -88,7 +86,7 @@ def vis_predicted_mask(image: tf.Tensor, pred: tf.Tensor):
     plt.title("Image +  Predicted Mask")
 
     plt.grid('off')
-    plt.show()
+    plt.imsave(f"detection {time()}")
 
 
 def run(
@@ -116,6 +114,9 @@ def run(
 
     final_out = tf.squeeze(final_out, axis=0)
     final_out = tf.image.resize(final_out, [original_image.shape[0], original_image.shape[1]], ResizeMethod.BICUBIC)
+    # we use tf.tile to make multiple copy of output single channel image
+    mutiple_const = tf.constant([1,1,3]) # [1,1,3] h(1)xw(1)xc(3)
+    final_out = tf.tile(final_out,mutiple_const)
 
     vis_predicted_mask(image=original_image, pred=final_out)
 
