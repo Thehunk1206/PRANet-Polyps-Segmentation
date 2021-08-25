@@ -61,7 +61,6 @@ def run_test(
         runtimes.append(total_time)
 
     mean_dice = sum(dice_coefs)/len(dice_coefs)
-    mean_dice = round(mean_dice,ndigits=2)
     mean_runtime = sum(runtimes)/ len(runtimes)
     tf.print(
             f"Average runtime of model: {mean_runtime}ms\n",
