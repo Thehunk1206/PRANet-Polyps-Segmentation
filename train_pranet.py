@@ -146,7 +146,7 @@ def train(
         
         with val_writer.as_default():
             tf.summary.scalar(name='val_loss', data=val_loss, step=e+1)
-            tf.summary.scalar(name='val_dice', data=val_dice.result(), step=e+1)
+            tf.summary.scalar(name='val_dice', data=val_dice, step=e+1)
             tf.summary.image(name='Y_mask', data=y_val_mask*255, step=e+1, max_outputs=batch_size, description='Val data')
             tf.summary.image(name='Global S Map', data=lateral_out_sg, step=e+1, max_outputs=batch_size, description='Val data')
             tf.summary.image(name='S4 Map', data=lateral_out_s4, step=e+1, max_outputs=batch_size, description='Val data')
