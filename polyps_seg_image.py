@@ -114,7 +114,7 @@ def run(
     total_time = round((end - start)*1000, ndigits=2)
     tf.print(f"Total runtime of model: {total_time}ms")
 
-    final_out = tf.squeeze(final_out)
+    final_out = tf.squeeze(final_out, axis=0)
     final_out = tf.image.resize(final_out, [original_image.shape[0], original_image.shape[1]], ResizeMethod.BICUBIC)
 
     vis_predicted_mask(image=original_image, pred=final_out)
