@@ -118,7 +118,7 @@ def run(
             res = outs[-1]
             res = process_output(raw_out=res, image_h=frame_height, image_w=frame_width, threshold=threshold)
 
-            final_frame = ((0.3 * frame) + (0.7 * res)).astype("uint8")
+            final_frame = ((0.5 * frame) + (0.5 * res)).astype("uint8")
             
             elaps_time = (end - start)*1000
             tf.print(f"Inference time for one frame: {elaps_time}ms")
