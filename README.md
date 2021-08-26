@@ -5,18 +5,22 @@
 Colonoscopy is an effective technique for detecting colorectal
 polyps, which are highly related to colorectal cancer. In clinical practice,
 segmenting polyps from colonoscopy images is of great importance since
-it provides valuable information for diagnosis and surgery. However, accurate polyp segmentation is a challenging task, for two major reasons:
+it provides valuable information for diagnosis and surgery. However, 
+accurate polyp segmentation is a challenging task, for two major reasons:
 (i) the same type of polyps has a diversity of size, color and texture; and
 (ii) the boundary between a polyp and its surrounding mucosa is not
-sharp. To address these challenges, we propose a parallel reverse attention network (PraNet) for accurate polyp segmentation in colonoscopy
+sharp. To address these challenges, we propose a parallel reverse attention
+network (PraNet)for accurate polyp segmentation in colonoscopy
 images. Specifically, we first aggregate the features in high-level layers
 using a parallel partial decoder (PPD). Based on the combined feature,
-we then generate a global map as the initial guidance area for the following components. In addition, we mine the boundary cues using the
-reverse attention (RA) module, which is able to establish the relationship between areas and boundary cues. Thanks to the recurrent cooperation mechanism between areas and boundaries, our PraNet is capable
-of calibrating some misaligned predictions, improving the segmentation
+we then generate a global map as the initial guidance area for the following components. 
+In addition, we mine the boundary cues using the reverse attention (RA) module,
+which is able to establish the relationship between areas and boundary cues. 
+Thanks to the recurrent cooperation mechanism between areas and boundaries,
+our PraNet is capable of calibrating some misaligned predictions, improving the segmentation
 accuracy. Quantitative and qualitative evaluations on five challenging
-datasets across six metrics show that our PraNet improves the segmentation accuracy significantly, and presents a number of advantages in terms
-of generalizability, and real-time segmentation efficiency
+datasets across six metrics show that our PraNet improves the segmentation accuracy significantly,
+and presents a number of advantages in terms of generalizability, and real-time segmentation efficiency
 ```
 Paper link: [Parallel Reverse Attention network for Polyps Segmentation](https://arxiv.org/pdf/2006.11392v4.pdf)
 
