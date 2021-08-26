@@ -24,7 +24,7 @@ SOFTWARE.
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.applications.resnet import preprocess_input
+from tensorflow.keras.applications import resnet
 from tensorflow.python import keras
 
 from model.backbone import FE_backbone
@@ -39,7 +39,7 @@ def preprocess_input_image(path: str, image_size: int) -> tf.Tensor:
     image = tf.image.resize(image, [image_size, image_size])
     # Add another dim of bactch size (batch,h,w,c)
     image = tf.expand_dims(image, axis=0)
-    image = preprocess_input(image)
+    image = resnet.preprocess_input(image)
 
     return image
 

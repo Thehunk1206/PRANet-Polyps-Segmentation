@@ -30,9 +30,9 @@ import sys
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-from utils.losses_and_metrics import WBCEDICELoss, DiceCoef
+from utils.losses_and_metrics import WBCEDICELoss
 from utils.dataset import TfdataPipeline
-from model.PRA_resenet import PRAresnet
+from model.PRA_net import PRAnet
 import tensorflow as tf
 tf.random.set_seed(4)
 
@@ -59,10 +59,14 @@ def train(
     gclip: float = 1.0,
     dataset_split: float = 0.1,
     backbone_trainable: bool = True,
-    logdir: str = "logs/"
+    backbone_arc:str = 'resnet50', 
+    logdir: str = "logs/",
 ):
     assert os.path.isdir(dataset_dir)
-
+    if backbone_arc == 'mobilenetv2' and img_size > 224:
+        tf.print(f"For backbone {backbone_arc} inputsize should be 32 < inputsize <=224")
+        sys.exit()
+    
     if not os.path.exists(dataset_dir):
         print(f"No dir named {dataset_dir} exist")
         sys.exit()
@@ -93,38 +97,37 @@ def train(
 
     # instantiate loss function
     loss_fn = WBCEDICELoss(name='w_bce_dice_loss')
-    train_metric = DiceCoef(name='train_dice_metric')
-    val_metric = DiceCoef(name='val_dice_metric')
 
 
-    # instantiate model (PRAresnet)
-    praresnet = PRAresnet(
+    # instantiate model (PRAnet)
+    pranet = PRAnet(
         IMG_H=img_size,
         IMG_W=img_size,
         filters=32,
+        backbone_arch=backbone_arc,
         backbone_trainable=backbone_trainable
     )
 
     # compile the model
-    praresnet.compile(
+    pranet.compile(
         optimizer=optimizer,
         loss=loss_fn,
     )
-    tf.print(praresnet.build_graph(inshape=(img_size, img_size, 3)).summary())
+    tf.print(pranet.build_graph(inshape=(img_size, img_size, 3)).summary())
     tf.print("==========Model configs==========")
     tf.print(
-        f"Training and validating PRAresnet for {epochs} epochs \nlearing_rate: {lr} \nInput shape:({img_size},{img_size},3) \nBatch size: {batch_size} \nBackbone Trainable: {backbone_trainable}"
+        f"Training and validating PRAnet for {epochs} epochs \nlearing_rate: {lr} \nInput shape:({img_size},{img_size},3) \nBatch size: {batch_size} \nBackbone arc: {backbone_arc} \nBackbone Trainable: {backbone_trainable}"
     )
     # train for epochs
     for e in range(epochs):
         t = time()
 
         for (x_train_img, y_train_mask) in tqdm(train_data, unit='steps', desc='training...', colour='red'):
-            train_loss, train_dice = praresnet.train_step(
+            train_loss, train_dice = pranet.train_step(
                 x_img=x_train_img, y_mask=y_train_mask, gclip=gclip)
 
         for (x_val_img, y_val_mask) in tqdm(val_data, unit='steps', desc='Validating...', colour='green'):
-            val_loss, val_dice = praresnet.test_step(x_img=x_val_img, y_mask=y_val_mask)
+            val_loss, val_dice = pranet.test_step(x_img=x_val_img, y_mask=y_val_mask)
 
         tf.print(
             "ETA:{} - epoch: {} - loss: {} - dice: {} - val_loss: {} - val_dice: {} \n".format(
@@ -133,7 +136,7 @@ def train(
         
 
         tf.print("Writing to Tensorboard...")
-        lateral_out_sg, lateral_out_s4, lateral_out_s3, lateral_out_s2 = praresnet(x_val_img, training=False)
+        lateral_out_sg, lateral_out_s4, lateral_out_s3, lateral_out_s2 = pranet(x_val_img, training=False)
         lateral_out_sg = process_output(lateral_out_sg)
         lateral_out_s4 = process_output(lateral_out_s4)
         lateral_out_s3 = process_output(lateral_out_s3)
@@ -157,7 +160,7 @@ def train(
             tf.print(
                 f"Saving model at {trained_model_dir}..."
             )
-            praresnet.save(trained_model_dir + "pranet_v1.2", save_format='tf')
+            pranet.save(f"{trained_model_dir}pranet_{backbone_arc}", save_format='tf')
             tf.print(f"model saved at {trained_model_dir}")
 
 
@@ -175,6 +178,8 @@ if __name__ == "__main__":
                         default=8, help='training batch size')
     parser.add_argument('--inputsize', type=int,
                         default=352, help='input image size')
+    parser.add_argument('--backbone', type=str,
+                        default='resnet50', help='Feature Extractor backbone Arc')
     parser.add_argument('--gclip', type=float,
                         default=1.0, help='gradient clipping margin')
     parser.add_argument('--trained_model_path', type=str,
@@ -194,5 +199,6 @@ if __name__ == "__main__":
         trained_model_dir=opt.trained_model_path,
         dataset_split=opt.data_split,
         backbone_trainable=True,
+        backbone_arc = opt.backbone,
         logdir=opt.logdir
     )

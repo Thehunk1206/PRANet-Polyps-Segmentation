@@ -32,17 +32,18 @@ from model.backbone import FE_backbone
 from utils.losses_and_metrics import dice_coef
 
 
-class PRAresnet(tf.keras.Model):
-    def __init__(self, IMG_H: int = 352, IMG_W: int = 352, filters: int = 32, backbone_trainable: bool = True, **kwargs):
-        super(PRAresnet, self).__init__(**kwargs)
+class PRAnet(tf.keras.Model):
+    def __init__(self, IMG_H: int = 352, IMG_W: int = 352, filters: int = 32, backbone_arch:str = 'resnet50', backbone_trainable: bool = True, **kwargs):
+        super(PRAnet, self).__init__(**kwargs)
         self.IMG_H = IMG_H
         self.IMG_W = IMG_W
         self.filters = filters
+        self.backbone_arc = backbone_arch
         self.backbone_trainable = backbone_trainable
 
         # pretrained resnet
-        self.fe_backbone = FE_backbone(inshape=(self.IMG_H, self.IMG_W, 3), is_trainable=self.backbone_trainable )
-        self.resnet = self.fe_backbone.get_fe_backbone()
+        self.fe_backbone = FE_backbone(model_architecture=self.backbone_arc,inshape=(self.IMG_H, self.IMG_W, 3), is_trainable=self.backbone_trainable )
+        self.backbone_feature_extractor = self.fe_backbone.get_fe_backbone()
 
         # Receptive field blocks
         # 3 blocks for three high level features from resnet
@@ -72,7 +73,7 @@ class PRAresnet(tf.keras.Model):
 
 
     def call(self, x: tf.Tensor):
-        self.features = self.resnet(x) # self.var for writing in summary
+        self.features = self.backbone_feature_extractor(x) # self.var for writing in summary
 
         # RFB
         feat2_rfb = self.rfb_2(self.features[1])  # => level_2(batch,h/8,w/8,32)
@@ -108,7 +109,7 @@ class PRAresnet(tf.keras.Model):
         loss_weights: list = [1,1,1,1],
         **kwargs
     ):
-        super(PRAresnet, self).compile(**kwargs)
+        super(PRAnet, self).compile(**kwargs)
         assert len(loss_weights) == 4
         self.optim = optimizer
         self.loss_fn = loss
@@ -157,6 +158,7 @@ class PRAresnet(tf.keras.Model):
             "IMG_H": self.IMG_H,
             "IMG_W": self.IMG_W,
             "filters": self.filters,
+            "backbone_arc": self.backbone_arc,
             "backbone_trainable": self.backbone_trainable
         }
     
@@ -178,7 +180,7 @@ if __name__ == "__main__":
     from time import time
     tf.random.set_seed(3)
     raw_inputs = (352,352,3)
-    pranet = PRAresnet(IMG_H=352,IMG_W=352,filters=32)
+    pranet = PRAnet(IMG_H=352,IMG_W=352,filters=32)
     start_time = time()
     out = pranet(tf.random.normal(shape=(8, *raw_inputs)))
     end_time = time()
