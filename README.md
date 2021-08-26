@@ -33,7 +33,7 @@ The original paper is implemented in [Pytorch](https://pytorch.org/). Here I re-
 
 ### PraNet(Parallel Reverse Attention Network) consist of three main component
 * Feature Extractor Backbone (here [resnet50](https://arxiv.org/pdf/1512.03385.pdf) and [Mobilenetv2](https://arxiv.org/pdf/1801.04381.pdf))
-* Parellel Partial Decoder Block (Main proposal of this paper)
+* Parallel Partial Decoder Block (Main proposal of this paper)
 * Reverse Attention Block ([Reverse Attention for Salient object detection](https://arxiv.org/pdf/1807.09940.pdf))
 
 ![Proposed Architecture](Illustrations/PRAnet%20architechture.png)
@@ -62,6 +62,12 @@ regions and details by erasing the existing estimated polyp regions from highlev
 ![reverse Attention block](Illustrations/reverse_attention_block.png)
 
 *Reverse Attention block (from paper [Reverse Attention for Salient Object Detection](https://arxiv.org/pdf/1807.09940.pdf))*
+
+### Loss function
+[PraNet](https://arxiv.org/pdf/2006.11392v4.pdf) paper uses Weighted BCE(Binary Cross Entropy loss) + Weighted IoU loss. Here I used  WBCE loss + WDice loss. Inspired by the loss function poroposed in paper [F3Net](https://vipl.ict.ac.cn/uploadfile/upload/2020071410571149.pdf). Do see the paper F3net to know more about this loss function.
+
+![Weighted segmentation Map](Illustrations/BCE_IOU_Weights.jpeg)
+**
 
 ## Dataset source
 * [Kvasir SEG dataset](https://datasets.simula.no/kvasir-seg/)
