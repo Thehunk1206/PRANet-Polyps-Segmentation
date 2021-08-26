@@ -67,7 +67,94 @@ regions and details by erasing the existing estimated polyp regions from highlev
 [PraNet](https://arxiv.org/pdf/2006.11392v4.pdf) paper uses Weighted BCE(Binary Cross Entropy loss) + Weighted IoU loss. Here I used  WBCE loss + WDice loss. Inspired by the loss function poroposed in paper [F3Net](https://vipl.ict.ac.cn/uploadfile/upload/2020071410571149.pdf). Do see the paper F3net to know more about this loss function.
 
 ![Weighted segmentation Map](Illustrations/BCE_IOU_Weights.jpeg)
-**
+*Weights for Dice and BCE loss*
+
+## Training and Testing model
+
+The PraNet Model was created with [Tensorflow==2.6.0](https://www.tensorflow.org/api_docs/python/tf) and was trained on [Google Colab's](https://colab.research.google.com/) Tesla T4 GPU (16GB VRAM)
+
+### Dataset structure
+Tensorflow [tf.data](https://www.tensorflow.org/guide/data) API is used to create Input Data pipeline.   
+<b>In order to create a data pipeline for Image and Mask, the folder should be structured likewise:</b>
+```
+polyps_dataser
+├── images [1000 files]
+│   ├── 1.jpg
+│   ├── 2.jpg
+│   └── 3.jpg
+└── masks [1000 files]
+    ├── 1.jpg
+    ├── 2.jpj
+    └── 3.jpj
+
+```
+
+### Model settings
+PraNet model was trained with two diefferent backbone architecture
+1. PraNet + Resnet50 (Bigger, Accurate but high latency model)
+2. PraNet + MobilenetV2 (Smaller, Low latency but little less accurate model)
+
+### Usage
+* Clone my github repo [PraNet](https://github.com/Thehunk1206/PRANet-Polyps-Segmentation)
+* Run ```$pip install -r requirements.txt``` to install required python packgages.
+
+
+For Training model, run following
+```
+$python train_pranet.py --help
+usage: train_pranet.py [-h] [--data_path DATA_PATH] [--data_split DATA_SPLIT] [--epoch EPOCH] [--lr LR] [--batchsize BATCHSIZE] [--inputsize INPUTSIZE]
+                       [--backbone BACKBONE] [--gclip GCLIP] [--trained_model_path TRAINED_MODEL_PATH] [--logdir LOGDIR]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --data_path DATA_PATH
+                        path to dataset
+  --data_split DATA_SPLIT
+                        split percent of val and test data
+  --epoch EPOCH         epoch number
+  --lr LR               learning rate
+  --batchsize BATCHSIZE
+                        training batch size
+  --inputsize INPUTSIZE
+                        input image size
+  --backbone BACKBONE   Feature Extractor backbone Arc
+  --gclip GCLIP         gradient clipping margin
+  --trained_model_path TRAINED_MODEL_PATH
+  --logdir LOGDIR       Tensorboard logs
+```
+#### Example 
+```
+!python train_pranet.py --data_path polyps_dataset/ \
+                        --data_split 0.1 \
+                        --epoch 25 \
+                        --lr 1e-4 \
+                        --batchsize 16 \
+                        --inputsize 352 \
+                        --gclip 0.5 \
+                        --trained_model_path trained_model/ \
+                        --backbone resnet50
+```
+
+Testing Model with test set
+```
+!python test_pranet.py --data_path polyps_dataset/ \
+                       --model_path trained_model/pranet_v1.2/ \
+                       --inputsize 352
+```
+
+Inferencing on single polyp image
+```
+!python polyps_seg_image.py --model_path trained_model/pranet_v1.2 \
+                            --image_path sample_polyps/polyps1.jpg \
+                            --inputsize 352
+```
+Inferencing on colonoscopy video:
+```
+!python polyps_seg_video.py --model_path trained_model/pranet_v1.2/ \
+                            --video_path sample_polyps/PolypColon.mp4 \
+                            --inputsize 352 \
+                            --threshold 0.5
+```
 
 ## Dataset source
 * [Kvasir SEG dataset](https://datasets.simula.no/kvasir-seg/)
