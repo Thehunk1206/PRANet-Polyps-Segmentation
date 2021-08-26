@@ -22,7 +22,7 @@ accuracy. Quantitative and qualitative evaluations on five challenging
 datasets across six metrics show that our PraNet improves the segmentation accuracy significantly,
 and presents a number of advantages in terms of generalizability, and real-time segmentation efficiency
 ```
-Paper link: [Parallel Reverse Attention network for Polyps Segmentation](https://arxiv.org/pdf/2006.11392v4.pdf)
+:scroll: Paper link: [Parallel Reverse Attention network for Polyps Segmentation](https://arxiv.org/pdf/2006.11392v4.pdf)
 
 ## Proposed Architecture in paper
 
