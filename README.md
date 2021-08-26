@@ -1,5 +1,8 @@
 # Parallel Reverse Attention Network for Polyp Segmentation
 
+![TensorFlow](https://img.shields.io/badge/TensorFlow-%23FF6F00.svg?style=for-the-badge&logo=TensorFlow&logoColor=white)
+![Keras](https://img.shields.io/badge/Keras-%23D00000.svg?style=for-the-badge&logo=Keras&logoColor=white)
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 ## Paper Abstract
 ```
 Colonoscopy is an effective technique for detecting colorectal
@@ -44,11 +47,21 @@ The ultimate goal of using a pre-trained feature extractor backbone is to extrac
 *Features at conv2_block3_out of resnet50 backbone*
 
 ### Parallel Partial Decoder
-Most of all popular Biomedical Image Segmention model <i>like [Unet](https://arxiv.org/pdf/1505.04597.pdf) , [U-net++](https://arxiv.org/pdf/1807.10165.pdf), [ResUnet](https://arxiv.org/pdf/1904.00592.pdf) etc</i>. are full Encoder-Decoder model which aggregates all multi-level feature from backbone network. But According to [Wu et al.](https://arxiv.org/pdf/1904.08739v1.pdf) paper, <b>compared with high-level features of backbone, low-level features demand more computational resources due to their larger spatial resolutions, but contribute less to over all performance of the model.</b> Therefore, this paper introduces a PPD(Paraller Partial Decoder) block which aggregates only high-level features which is extracted from pretrained resnet50 model. This block aggregates all high-level features with parallel connection this way the gradients can flow much faster and efficiently.
+Most of all popular Biomedical Image Segmention model <i>like [Unet](https://arxiv.org/pdf/1505.04597.pdf) , [U-net++](https://arxiv.org/pdf/1807.10165.pdf), [ResUnet](https://arxiv.org/pdf/1904.00592.pdf) etc</i>. are full Encoder-Decoder model which aggregates all multi-level feature from backbone network. But According to [Wu et al.](https://arxiv.org/pdf/1904.08739v1.pdf) paper, <b>compared with high-level features of backbone, low-level features demand more computational resources due to their larger spatial resolutions, but contribute less to over all performance of the model.</b> Therefore, this paper introduces a PPD(Paraller Partial Decoder) block which aggregates only high-level features which is extracted from pretrained resnet50 model to get a *Global Saliency Map*. This block aggregates all high-level features with parallel connection this way the gradients can flow much faster and efficiently.
 
 ![PPD Block](Illustrations/Partial_decoder.svg)
+
 *PPD block*
 
+### Reverse Attention block
+
+In a clinical setting, doctors first roughly locate the polyp region, and then carefully inspect local tissues to accurately label the polyp. Our Global Saliency map is derived from the deepest CNN layer, which can only capture a relatively rough location of the polyp tissues, without structural details (see proposed Architecture figure). To address this issue, This paper proposes a principle strategy to progressively mine discriminative polyp regions through an erasing foreground object manner as given in paper [Reverse Attention for Salient object detection](https://arxiv.org/pdf/1807.09940.pdf). Instead of aggregating features from all levels like in [Unet](https://arxiv.org/pdf/1505.04597.pdf) [U-net++](https://arxiv.org/pdf/1807.10165.pdf) and [ResUnet](https://arxiv.org/pdf/1904.00592.pdf), The paper proposes to adaptively learn the reverse attention in three parallel high-level
+features. In other words, our architecture can sequentially mine complementary
+regions and details by erasing the existing estimated polyp regions from highlevel side-output features, where the existing estimation is up-sampled from the deeper layer. <b>(Mostly taken from PraNet Paper, do refer [paper](https://arxiv.org/pdf/2006.11392v4.pdf) to get more info)</b>
+
+![reverse Attention block](Illustrations/reverse_attention_block.png)
+
+*Reverse Attention block (from paper [Reverse Attention for Salient Object Detection](https://arxiv.org/pdf/1807.09940.pdf))*
 
 ## Dataset source
 * [Kvasir SEG dataset](https://datasets.simula.no/kvasir-seg/)
