@@ -75,7 +75,7 @@ def train(
         os.mkdir(path=trained_model_dir)
 
     # instantiate tf.summary writer
-    logsdir = logdir + "PRAnet/" + datetime.now().strftime("%Y%m%d-%H%M%S")
+    logsdir = logdir + "PRAnet/" + "PRAnet_"+backbone_arc+datetime.now().strftime("%Y%m%d-%H%M%S")
     train_writer = tf.summary.create_file_writer(logsdir + "/train/")
     val_writer = tf.summary.create_file_writer(logsdir + "/val/")
 
