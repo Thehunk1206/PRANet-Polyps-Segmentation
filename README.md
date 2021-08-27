@@ -165,7 +165,7 @@ $python polyps_seg_video.py --model_path trained_model/pranet_resnet/ \
 ## Results
 Model was trained on KVASIR SEG dataset which contains 1000 polyps images and 1000 corresponding mask. Data was splitted into Training, validating and Testing set in 80:10:10 ratio respectively.
 
-*GPU: Google colab's Tesla T4 16BG, CPU: Google colab's compute engine runtime*
+*GPU: Google colab's Tesla T4 16GB, CPU: Google colab's compute engine runtime*
 
 | PraNet + Backbone   | Learning Rate|    Epoch    | Dice (training)|   Dice (validating) | mDice(Testing)|mRuntime(inferencing mode) GPU|mRuntime(inferencing mode)CPU|
 |---------------------|:-------------|:-----------:|---------------:|--------------------:|--------------:|---------:|--------:|
