@@ -84,7 +84,7 @@ The PraNet Model was created with [Tensorflow==2.6.0](https://www.tensorflow.org
 Tensorflow [tf.data](https://www.tensorflow.org/guide/data) API is used to create Input Data pipeline.   
 <b>In order to create a data pipeline for Image and Mask, the folder should be structured likewise:</b>
 ```
-polyps_dataser
+polyps_dataset
 ├── images [1000 files]
 │   ├── 1.jpg
 │   ├── 2.jpg
@@ -97,7 +97,7 @@ polyps_dataser
 ```
 
 ### Model settings
-PraNet model was trained with two diefferent backbone architecture
+PraNet model was trained with two different backbone architecture
 1. PraNet + Resnet50 (Bigger, Accurate but high latency model)
 2. PraNet + MobilenetV2 (Smaller, Low latency but little less accurate model)
 
@@ -162,6 +162,7 @@ $python polyps_seg_video.py --model_path trained_model/pranet_resnet/ \
                             --inputsize 352 \
                             --threshold 0.5
 ```
+<b>*Note: When loading PraNet model with Mobilenetv2 backbone arc, make sure the inp*</b>
 ## Results
 Model was trained on KVASIR SEG dataset which contains 1000 polyps images and 1000 corresponding mask. Data was splitted into Training, validating and Testing set in 80:10:10 ratio respectively.
 
