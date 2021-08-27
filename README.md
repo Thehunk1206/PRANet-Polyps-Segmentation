@@ -48,7 +48,7 @@ The original paper is implemented in [Pytorch](https://pytorch.org/). Here I re-
 
 ### Feature Extractor Backbone
 For extracting high level features from a pretrained network, the authors of the paper has used [Res2Net50](https://arxiv.org/pdf/1904.01169.pdf) pretrained on [Imagenet](https://www.image-net.org/). A feature extractor backbone can be any SOTA pretrained Image Recognition model. I used [resnet50](https://arxiv.org/pdf/1512.03385.pdf) for high precision output and [Mobilenetv2](https://arxiv.org/pdf/1801.04381.pdf) for low latency output pretrained on [Imagenet](https://www.image-net.org/).
-The ultimate goal of using a pre-trained feature extractor backbone is to extract high level features from images (<i>e.i for resnet50 {conv3_block4_out f=512, conv4_block6_out f=1024, conv5_block3_out f=2048 }</i>) and aggregate to get a global saliency map.
+The ultimate goal of using a pre-trained feature extractor backbone is to extract high level features from images (<i>i.e for resnet50 {conv3_block4_out f=512, conv4_block6_out f=1024, conv5_block3_out f=2048 }</i>) and aggregate to get a global saliency map.
 
 ![extracted_feature](Illustrations/features_at_conv2_block3_out_resnet50.png)
 *Features at conv2_block3_out of resnet50 backbone*
