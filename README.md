@@ -162,7 +162,7 @@ $python polyps_seg_video.py --model_path trained_model/pranet_resnet/ \
                             --inputsize 352 \
                             --threshold 0.5
 ```
-<b>*Note: When loading PraNet model with Mobilenetv2 backbone arc, make sure the inp*</b>
+<b>*Note: When loading PraNet model with Mobilenetv2 backbone arc, make sure the inputsize is set to 224*</b>
 ## Results
 Model was trained on KVASIR SEG dataset which contains 1000 polyps images and 1000 corresponding mask. Data was splitted into Training, validating and Testing set in 80:10:10 ratio respectively.
 
