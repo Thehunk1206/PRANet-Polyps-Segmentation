@@ -1,8 +1,15 @@
 # Parallel Reverse Attention Network for Polyp Segmentation
 
-![TensorFlow](https://img.shields.io/badge/TensorFlow-%23FF6F00.svg?style=for-the-badge&logo=TensorFlow&logoColor=white)
-![Keras](https://img.shields.io/badge/Keras-%23D00000.svg?style=for-the-badge&logo=Keras&logoColor=white)
-![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+[![TensorFlow](https://img.shields.io/badge/TensorFlow-%23FF6F00.svg?style=for-the-badge&logo=TensorFlow&logoColor=white)](https://tensorflow.org)
+[![Keras](https://img.shields.io/badge/Keras-%23D00000.svg?style=for-the-badge&logo=Keras&logoColor=white)](https://keras.io/)
+[![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)](https://www.python.org/)
+
+[![GitHub license](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/Thehunk1206/PRANet-Polyps-Segmentation?style=social)](https://github.com/Thehunk1206/PRANet-Polyps-Segmentation/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/Thehunk1206/PRANet-Polyps-Segmentation?style=social)](https://github.com/Thehunk1206/PRANet-Polyps-Segmentation/network/members)
+[![GitHub watchers](https://img.shields.io/github/watchers/Thehunk1206/PRANet-Polyps-Segmentation?style=social)](https://github.com/Thehunk1206/PRANet-Polyps-Segmentation/watchers)
+
+
 ## Paper Abstract
 ```
 Colonoscopy is an effective technique for detecting colorectal
@@ -124,7 +131,7 @@ optional arguments:
 ```
 #### Example 
 ```
-!python train_pranet.py --data_path polyps_dataset/ \
+$python train_pranet.py --data_path polyps_dataset/ \
                         --data_split 0.1 \
                         --epoch 25 \
                         --lr 1e-4 \
@@ -135,29 +142,78 @@ optional arguments:
                         --backbone resnet50
 ```
 
-Testing Model with test set
+#### Testing Model with test set
 ```
-!python test_pranet.py --data_path polyps_dataset/ \
-                       --model_path trained_model/pranet_v1.2/ \
+$python test_pranet.py --data_path polyps_dataset/ \
+                       --model_path trained_model/pranet_resnet/ \
                        --inputsize 352
 ```
 
-Inferencing on single polyp image
+#### Inferencing on single polyp image
 ```
-!python polyps_seg_image.py --model_path trained_model/pranet_v1.2 \
+$python polyps_seg_image.py --model_path trained_model/pranet_resnet \
                             --image_path sample_polyps/polyps1.jpg \
                             --inputsize 352
 ```
-Inferencing on colonoscopy video:
+#### Inferencing on colonoscopy video:
 ```
-!python polyps_seg_video.py --model_path trained_model/pranet_v1.2/ \
+$python polyps_seg_video.py --model_path trained_model/pranet_resnet/ \
                             --video_path sample_polyps/PolypColon.mp4 \
                             --inputsize 352 \
                             --threshold 0.5
 ```
+## Results
+Model was trained on KVASIR SEG dataset which contains 1000 polyps images and 1000 corresponding mask. Data was splitted into Training, validating and Testing set in 80:10:10 ratio respectively.
+
+*GPU: Google colab's Tesla T4 16BG, CPU: Google colab's compute engine runtime*
+
+| PraNet + Backbone   | Learning Rate|    Epoch    | Dice (training)|   Dice (validating) | mDice(Testing)|mRuntime(inferencing mode) GPU|mRuntime(inferencing mode)CPU|
+|---------------------|:-------------|:-----------:|---------------:|--------------------:|--------------:|---------:|--------:|
+| PraNet + resnet50   | 1e-4         | 25          | 0.96           |      0.88           |   0.87        |  40ms    |    450ms|
+| PraNet + MobilenetV2| 1e-4         | 25          | 0.92           |      0.83           |   0.76        |  15ms    |     75ms|
+
+## Visual Results
+### Single image segmentation (PraNet + resent50) 
+*NOTE: The following polyps images are totally out of dataset*
+
+![result1](results/detection_1629897892.6244857.jpg) 
+
+![result2](results/detection_1629897991.632123.jpg)
+
+![result3](results/detection_1629906315.877541.jpg)
+
+### Single image segmentation (PraNet + mobilenetv2) 
+*NOTE: The following polyps images are totally out of dataset*
+
+![result4](results/detection_mobilenet_1629983960.1703162.jpg)
+
+![result5](results/detection_mobilenet_1629984400.0384865.jpg)
+
+![resul6](results/detection_mobilenet_1629984264.3444276.jpg)
+
+### Real time polyp segmentation
+
+![gif result](results/real_time_segmentation_PranNet_resnet50.gif)
+
+## Trained model link
+*Model was implemented in Tensorflow==2.6.0 and keras==2.6.0 by subclassing keras Model class.*
+*Model was save in [SaveModel](https://www.tensorflow.org/guide/saved_model) format*
+
+<b>*NOTE: Load the model with latest Tensorflow version*</b>
+
+* PraNet + resnet50 [drive link](https://drive.google.com/drive/folders/1-SyjM1t2FZIrSOflBlXkNC1e_eyk3Vwk?usp=sharing)
+* PraNet + Mobilenetv2 [drive link](https://drive.google.com/drive/folders/11-Dtd9kf0arRDwJ-DCgLeGxewr0HRGFz?usp=sharing)
 
 ## Dataset source
 * [Kvasir SEG dataset](https://datasets.simula.no/kvasir-seg/)
+
+
+# Reference Papers
+*Some reference paper that was used in PraNet paper and was useful for this implementation*
+* [Reverse Attention for Salient Object Detection](https://arxiv.org/pdf/1807.09940.pdf)
+* [Receptive Field Block Net for Accurate and Fast Object Detection](https://arxiv.org/pdf/1711.07767.pdf)
+* [A survey of loss functions for semantic segmentation](https://arxiv.org/pdf/2006.14822.pdf)
+* [F3Net: Fusion, Feedback and Focus for Salient Object Detection](https://arxiv.org/pdf/1911.11445.pdf)
 
 # citation
 Paper
