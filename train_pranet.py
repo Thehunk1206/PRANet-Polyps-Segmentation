@@ -81,7 +81,7 @@ def train(
 
     # initialize tf.data pipeline
     tf_datapipeline = TfdataPipeline(
-        BASE_DATASET_DIR="polyps_dataset/",
+        BASE_DATASET_DIR=dataset_dir,
         IMG_H=img_size,
         IMG_W=img_size,
         batch_size=batch_size,

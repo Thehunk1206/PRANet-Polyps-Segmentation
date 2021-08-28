@@ -113,7 +113,10 @@ class DiceCoef(tf.keras.metrics.Metric):
 def dice_coef(y_mask: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
     smooth = 1e-15
     y_pred = tf.sigmoid(y_pred)
+
     y_pred = tf.cast(tf.math.greater(y_pred, 0.5), tf.float32)
+    y_mask = tf.cast(tf.math.greater(y_mask, 0.5), tf.float32)
+
     intersection = tf.reduce_sum(
         tf.multiply(y_mask, y_pred), axis=( 1, 2, 3))
     union = tf.reduce_sum((y_mask + y_pred), axis=(1, 2, 3)) + smooth
@@ -121,7 +124,24 @@ def dice_coef(y_mask: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
 
     return dice
 
+def iou_metric(y_mask: tf.Tensor, y_pred: tf.Tensor)-> tf.Tensor:
+    smooth = 1e-15
 
+    y_pred = tf.sigmoid(y_pred)
+    y_pred = tf.cast(tf.greater(y_pred, 0.5), dtype=tf.float32)
+    y_mask = tf.cast(tf.greater(y_mask, 0.5), dtype=tf.float32)
+
+
+    intersection = tf.reduce_sum(
+        tf.multiply(y_mask, y_pred), axis=( 1, 2))
+    
+    union = tf.reduce_sum((y_mask + y_pred), axis=(1, 2)) + smooth
+
+    iou = tf.reduce_mean((intersection)/(union-intersection))
+
+    return iou
+
+#test
 if __name__ == "__main__":
     from visualize_bce_iou_loss_weigth import read_mask
 
@@ -131,16 +151,19 @@ if __name__ == "__main__":
     loss_w_bce_iou = WBCEDICELoss(name='structure_loss')
     loss_ms_ssim = SSIMLoss(name='SSIM_loss')
 
-    # y_mask = read_mask(path_to_mask1)
-    # y_pred = read_mask(path_to_mask2)
+    y_mask = read_mask(path_to_mask1)
+    y_pred = read_mask(path_to_mask2)
 
-    y_mask = tf.random.normal([8, 352, 352, 1])
-    y_pred = tf.random.normal([8, 352, 352, 1])
+    # y_mask = tf.random.normal([8, 352, 352, 1])
+    # y_pred = tf.random.normal([8, 352, 352, 1])
 
     total_w_bce_dice_loss = loss_w_bce_iou(y_mask, y_pred)
     total_ssim_loss = loss_ms_ssim(y_mask, y_pred)
     dice_metric = dice_coef(y_mask, y_pred)
+    iou = iou_metric(y_mask, y_pred)
 
-    print(f"w_bce_dice_loss: {total_w_bce_dice_loss}")
-    print(f"SSIM loss: {total_ssim_loss}")
-    print(f"dice coef: {dice_metric}")
+    tf.print(f"w_bce_dice_loss: {total_w_bce_dice_loss}")
+    tf.print(f"SSIM loss: {total_ssim_loss}")
+    tf.print(f"dice coef: {dice_metric}")
+    tf.print(f"IoU: {iou}")
+
