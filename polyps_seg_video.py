@@ -82,6 +82,7 @@ def run(
 ):
     assert os.path.isfile(video_path)
     assert os.path.exists(model_path)
+    assert 1.0 > threshold > 0.0
 
     pranet = get_model(model_path=model_path) # load model
 

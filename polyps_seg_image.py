@@ -117,9 +117,11 @@ def run(
     model_path: str,
     image_path: str,
     imgsize: int = 352,
+    threshold: float = 0.5
 ):
     assert os.path.exists(model_path)
     assert os.path.exists(image_path)
+    assert 1.0 > threshold > 0.0
 
     pranet = get_model(model_path=model_path)
 
@@ -131,7 +133,7 @@ def run(
     outs = pranet(input_image)
     end = time()
     sg, s4, s3, final_out = outs
-    final_out = process_output(final_out, original_img=original_image, threshold=0.5)
+    final_out = process_output(final_out, original_img=original_image, threshold=threshold)
     sg = process_output(sg, original_img=original_image)
     s4 = process_output(s4, original_img=original_image)
     s3 = process_output(s3, original_img=original_image)

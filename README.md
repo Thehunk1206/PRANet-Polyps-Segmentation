@@ -188,7 +188,7 @@ Model was trained on KVASIR SEG dataset which contains 1000 polyps images and 10
 
 ![result4](results/detection_mobilenet_1629983960.1703162.jpg)
 
-![result5](results/detection_mobilenet_1629984400.0384865.jpg)
+![result5](results/detection_mobilenetv2_1630207183.0212953.jpg)
 
 ![resul6](results/detection_mobilenet_1629984264.3444276.jpg)
 
