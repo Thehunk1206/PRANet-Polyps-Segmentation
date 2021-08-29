@@ -203,7 +203,7 @@ Model was trained on KVASIR SEG dataset which contains 1000 polyps images and 10
 <b>*NOTE: Load the model with latest Tensorflow version*</b>
 
 * PraNet + resnet50 [drive link](https://drive.google.com/drive/folders/1-SyjM1t2FZIrSOflBlXkNC1e_eyk3Vwk?usp=sharing)
-* PraNet + Mobilenetv2 [drive link](https://drive.google.com/drive/folders/11-Dtd9kf0arRDwJ-DCgLeGxewr0HRGFz?usp=sharing)
+* PraNet + Mobilenetv2 [drive link](https://drive.google.com/drive/folders/1-dXVoSffS8_zcpLuW7fnaP1NMy3b-WcW?usp=sharing)
 
 ## Dataset source
 * [Kvasir SEG dataset](https://datasets.simula.no/kvasir-seg/)
