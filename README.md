@@ -171,7 +171,7 @@ Model was trained on KVASIR SEG dataset which contains 1000 polyps images and 10
 | PraNet + Backbone   | Learning Rate|    Epoch    | Dice (training)|   Dice (validating) | mDice(Testing)|mRuntime(inferencing mode) GPU|mRuntime(inferencing mode)CPU|
 |---------------------|:-------------|:-----------:|---------------:|--------------------:|--------------:|---------:|--------:|
 | PraNet + resnet50   | 1e-4         | 25          | 0.97           |      0.88           |   0.87        |  30ms    |    510ms|
-| PraNet + MobilenetV2| 1e-4         | 25          | 0.92           |      0.83           |   0.76        |  15ms    |     85ms|
+| PraNet + MobilenetV2| 1e-4         | 25          | 0.92           |      0.83           |   0.78        |  15ms    |     85ms|
 
 ## Visual Results
 ### Single image segmentation (PraNet + resent50) 
