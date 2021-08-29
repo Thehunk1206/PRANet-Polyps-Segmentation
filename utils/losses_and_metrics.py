@@ -43,7 +43,6 @@ class WBCEDICELoss(tf.keras.losses.Loss):
         # weighted DICE loss
         y_pred = tf.sigmoid(y_pred)
         y_pred = tf.cast(tf.math.greater(y_pred, 0.5), tf.float32)
-        # y_mask = tf.cast(tf.math.greater(y_mask, 0.5), tf.float32)
 
         inter = tf.reduce_sum((y_pred * y_mask) * bce_iou_weights, axis=(1, 2))
         union = tf.reduce_sum((y_pred + y_mask) * bce_iou_weights, axis=(1, 2))

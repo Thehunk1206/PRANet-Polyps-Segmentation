@@ -34,7 +34,7 @@ from utils.losses_and_metrics import WBCEDICELoss
 from utils.dataset import TfdataPipeline
 from model.PRA_net import PRAnet
 import tensorflow as tf
-tf.random.set_seed(4)
+tf.random.set_seed(41)
 
 
 def process_output(x: tf.Tensor, threshold:float = None):
