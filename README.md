@@ -34,6 +34,8 @@ and presents a number of advantages in terms of generalizability, and real-time 
 ```
 :scroll: Paper link: [Parallel Reverse Attention network for Polyps Segmentation](https://arxiv.org/pdf/2006.11392v4.pdf)
 
+Checkout the original Implementation of the paper [here](https://github.com/DengPingFan/PraNet)
+
 ## Proposed Architecture in paper
 
 The original paper is implemented in [Pytorch](https://pytorch.org/). Here I re-implemented same paper in [Tensorflow==2.6.0](https://www.tensorflow.org/api_docs/python/tf)
@@ -168,10 +170,20 @@ Model was trained on KVASIR SEG dataset which contains 1000 polyps images and 10
 
 *GPU: Google colab's Tesla T4 16GB, CPU: Google colab's compute engine runtime*
 
-| PraNet + Backbone   | Learning Rate|    Epoch    | Dice (training)|   Dice (validating) | mDice(Testing)|mRuntime(inferencing mode) GPU|mRuntime(inferencing mode)CPU|
-|---------------------|:-------------|:-----------:|---------------:|--------------------:|--------------:|---------:|--------:|
-| PraNet + resnet50   | 1e-4         | 25          | 0.97           |      0.88           |   0.87        |  30ms    |    510ms|
-| PraNet + MobilenetV2| 1e-4         | 25          | 0.92           |      0.83           |   0.78        |  15ms    |     85ms|
+| PraNet + Backbone   | Learning Rate|    Epoch    | Dice (training)|   Dice (validating) | mDice(Testing)| mIoU(Testing) |mRuntime(inferencing mode) GPU|mRuntime(inferencing mode)CPU|
+|---------------------|:-------------|:-----------:|---------------:|--------------------:|--------------:|--------------:|---------:|--------:|
+| PraNet + resnet50   | 1e-4         | 25          | 0.97           |      0.88           |   0.87        |      0.79     |  30ms    |    510ms|
+| PraNet + MobilenetV2| 1e-4         | 25          | 0.92           |      0.83           |   0.78        |      0.68     |  15ms    |     85ms|
+
+## Metrics Result Comparison between Original Implementation(Paper) and My Implementation(Tensorflow)
+*Currently the model is only trained on Kvasir-SEG dataset. If anyone is interested, they can train the model on different dataset and share their results.*
+
+|                             | Dataset      |   mDice    |     mIoU    |
+|-----------------------------|-------------:|-----------:|------------:|
+| PraNet (Original)           | Kvasir-SEG   |    0.90    |     0.84    |
+| PraNet (My Implementation)  | Kvasir-SEG   |    0.87    |     0.79    |
+
+*Note: The results of My Implementation and original implementation differs because of training strategy, But overall the proposed architecture is SOTA and can converge way too fast by yielding better results.*
 
 ## Visual Results
 ### Single image segmentation (PraNet + resent50) 
