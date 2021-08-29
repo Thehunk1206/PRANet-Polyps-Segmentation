@@ -29,7 +29,7 @@ from model.ra_module import ReverseAttention
 from model.partial_decoder import PartialDecoder
 from model.rfb import RFB
 from model.backbone import FE_backbone
-from utils.losses_and_metrics import dice_coef
+from utils.losses_and_metrics import dice_coef, iou_metric
 
 
 class PRAnet(tf.keras.Model):
@@ -117,6 +117,14 @@ class PRAnet(tf.keras.Model):
 
     @tf.function
     def train_step(self, x_img: tf.Tensor, y_mask: tf.Tensor, gclip:float):
+        '''
+        Forward pass, calculates total loss, and calculate gradients with respect to loss.
+        args    x_img: Input Image -> tf.Tensor
+                y_mask: Mask map of x_img -> tf.Tensor
+                gclip: float margin value between 0 and 1 to clip the gradients
+        
+        returns total_loss, train_dice, train_iou
+        '''
         with tf.GradientTape() as tape:
             lateral_out_sg, lateral_out_s4, lateral_out_s3, lateral_out_s2 = self(x_img, training=True)
             loss1 = self.loss_fn(y_mask, lateral_out_sg)
@@ -134,12 +142,21 @@ class PRAnet(tf.keras.Model):
 
         self.optim.apply_gradients(zip(grads, self.trainable_variables))
         
+        # metrics Dice coeff and IoU
         train_dice = dice_coef(y_mask=y_mask, y_pred=lateral_out_s2)
+        train_iou = iou_metric(y_mask=y_mask, y_pred=lateral_out_s2)
 
-        return train_loss, train_dice
+        return train_loss, train_dice, train_iou
     
     @tf.function
     def test_step(self, x_img: tf.Tensor, y_mask: tf.Tensor):
+        '''
+        Forward pass, Calculates loss and metric on validation set
+        args    x_img: Input Image -> tf.Tensor
+                y_mask: Mask map of x_img -> tf.Tensor
+        
+        returns total_loss, val_dice, val_iou
+        '''
         lateral_out_sg, lateral_out_s4, lateral_out_s3, lateral_out_s2 = self(x_img, training=False)
         loss1 = self.loss_fn(y_mask, lateral_out_sg)
         loss2 = self.loss_fn(y_mask, lateral_out_s4)
@@ -149,9 +166,11 @@ class PRAnet(tf.keras.Model):
         val_loss = (self.loss_weights[0]*loss1) + (self.loss_weights[1]*loss2) + \
                             (self.loss_weights[2]*loss3) + (self.loss_weights[-1]*loss4)
 
+        # metrics Dice coeff, IoU
         val_dice = dice_coef(y_mask=y_mask, y_pred=lateral_out_s2)
+        val_iou = iou_metric(y_mask=y_mask,y_pred=lateral_out_s2)
 
-        return val_loss, val_dice
+        return val_loss, val_dice, val_iou
 
     def get_config(self):
         return {
