@@ -32,7 +32,7 @@ from time import time
 import tensorflow as tf
 from tensorflow.keras import models
 from tensorflow.python.data.ops.dataset_ops import DatasetV2
-from utils.losses_and_metrics import dice_coef, iou, iou_metric
+from utils.losses_and_metrics import dice_coef, iou_metric
 from utils.dataset import TfdataPipeline
 
 
