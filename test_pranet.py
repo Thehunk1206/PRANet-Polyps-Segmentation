@@ -96,15 +96,18 @@ def run_test(
         wfb = wfb_metric(y_mask=mask, y_pred=final_out)
         dice_coefs.append(dice)
         ious.append(iou)
+        wfbs.append(wfb)
         runtimes.append(total_time)
 
     mean_dice = sum(dice_coefs)/len(dice_coefs)
     mean_iou = sum(ious)/len(ious)
+    mean_wfb = sum(wfbs)/len(wfbs)
     mean_runtime = sum(runtimes[3:])/ len(runtimes[3:])
     tf.print(
-            f"Average runtime of model: {mean_runtime}ms\n",
+            f"Average runtime of model: {mean_runtime}ms \n",
             f"Mean IoU: {mean_iou}\n"
-            f"Mean Dice coef: {mean_dice}\n\n\n",
+            f"Mean Dice coef: {mean_dice}\n",
+            f"Mean wfb: {mean_wfb}"
             "NOTE: The runtime of model can be high at first run as it \ntake time to cache the data in memory.\ntry to run the script again without closing the session"
         )
 
