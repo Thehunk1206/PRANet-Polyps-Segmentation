@@ -71,7 +71,6 @@ def dice_coef(y_mask: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
     return: Dice coeff value ranging between [0-1]
     '''
     smooth = 1e-15
-    y_pred = tf.sigmoid(y_pred)
 
     y_pred = tf.cast(tf.math.greater(y_pred, 0.5), tf.float32)
     y_mask = tf.cast(tf.math.greater(y_mask, 0.5), tf.float32)
@@ -93,7 +92,6 @@ def iou_metric(y_mask: tf.Tensor, y_pred: tf.Tensor)-> tf.Tensor:
     '''
     smooth = 1e-15
 
-    y_pred = tf.sigmoid(y_pred)
     y_pred = tf.cast(tf.greater(y_pred, 0.5), dtype=tf.float32)
     y_mask = tf.cast(tf.greater(y_mask, 0.5), dtype=tf.float32)
 
@@ -162,7 +160,6 @@ class WFbetaMetric(object):
         y_mask = tf.squeeze(y_mask)
         y_pred = tf.squeeze(y_pred)
 
-        y_pred = tf.sigmoid(y_pred)
         y_pred = tf.cast(tf.greater(y_pred, 0.5), dtype=tf.int32)
         y_mask = tf.cast(tf.greater(y_mask, 0.5), dtype=tf.int32)
         y_pred = y_pred.numpy()

@@ -32,7 +32,7 @@ from time import time
 import tensorflow as tf
 from tensorflow.keras import models
 from tensorflow.python.data.ops.dataset_ops import DatasetV2
-from utils.losses_and_metrics import dice_coef, iou_metric
+from utils.losses_and_metrics import dice_coef, iou_metric, WFbetaMetric
 from utils.dataset import TfdataPipeline
 
 
@@ -63,25 +63,37 @@ def datapipeline(dataset_path: str, imgsize:int = 352) -> DatasetV2:
 def run_test(
     model_path:str,
     imgsize:int = 352,
-    dataset_path:str='polyps_dataset/'
+    dataset_path:str='polyps_dataset/',
+    threshold:float = 0.5
 ):
+    assert os.path.exists(model_path)
+    assert os.path.exists(dataset_path)
+    assert 1.0 > threshold > 0.0
+
     pranet = get_model(model_path=model_path)
     test_data = datapipeline(dataset_path=dataset_path, imgsize=imgsize)
 
+    # initialize metrics
+    wfb_metric = WFbetaMetric()
+    # collect metric for individual test data to average it later
     dice_coefs = []
     ious = []
+    wfbs = []
     runtimes = []
 
     for (image, mask) in tqdm(test_data, desc='Testing..', unit='steps', colour='green'):
         start = time()
         outs = pranet(image)
         end = time()
+        # squesh the out put between 0-1
         final_out = tf.sigmoid(outs[-1])
+        # convert the out map to binary map
         final_out = tf.cast(tf.math.greater(final_out, 0.5), tf.float32)
 
         total_time = round((end - start)*1000, ndigits=2)
         dice = dice_coef(y_mask=mask, y_pred=final_out)
         iou = iou_metric(y_mask=mask, y_pred=final_out)
+        wfb = wfb_metric(y_mask=mask, y_pred=final_out)
         dice_coefs.append(dice)
         ious.append(iou)
         runtimes.append(total_time)
@@ -108,12 +120,15 @@ if __name__ == "__main__":
                         default='polyps_dataset/', help='path to dataset')
     parser.add_argument('--inputsize', type=int,
                         default=352, help='input image size')
+    parser.add_argument('--threshold', type=float,
+                        default=0.5, help='setting the threshold to convert out map to binary')
 
     opt = parser.parse_args()
 
     run_test(
         model_path=opt.model_path,
         imgsize=opt.inputsize,
-        dataset_path=opt.data_path
+        dataset_path=opt.data_path,
+        threshold=opt.threshold
     )
     
