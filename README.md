@@ -178,10 +178,10 @@ Model was trained on KVASIR SEG dataset which contains 1000 polyps images and 10
 ## Metrics Result Comparison between Original Implementation(Paper) and My Implementation(Tensorflow)
 *Currently the model is only trained on Kvasir-SEG dataset. If anyone is interested, they can train the model on different dataset and share their results.*
 
-|                             | Dataset      |   mDice    |     mIoU    |
-|-----------------------------|-------------:|-----------:|------------:|
-| PraNet (Original)           | Kvasir-SEG   |    0.90    |     0.84    |
-| PraNet (My Implementation)  | Kvasir-SEG   |    0.87    |     0.79    |
+|                             | Dataset      |  mDice   |  mIoU   | wFb   |S-measure|E-measure| MAE |
+|-----------------------------|-------------:|---------:|--------:|------:|--------:|--------:|----:|
+| PraNet (Original)           | Kvasir-SEG   |   0.90   |  0.84   |  0.89 |   0.92  |  0.95   |0.030|
+| PraNet (My Implementation)  | Kvasir-SEG   |   0.87   |  0.79   |  0.86 |   0.88  |  0.93   |0.037|
 
 *Note: The results of My Implementation and original implementation differs because of training strategy, But overall the proposed architecture is SOTA and can converge way too fast by yielding better results.*
 
@@ -227,6 +227,9 @@ Model was trained on KVASIR SEG dataset which contains 1000 polyps images and 10
 * [Receptive Field Block Net for Accurate and Fast Object Detection](https://arxiv.org/pdf/1711.07767.pdf)
 * [A survey of loss functions for semantic segmentation](https://arxiv.org/pdf/2006.14822.pdf)
 * [F3Net: Fusion, Feedback and Focus for Salient Object Detection](https://arxiv.org/pdf/1911.11445.pdf)
+* [How to Evaluate Foreground Maps?](https://openaccess.thecvf.com/content_cvpr_2014/papers/Margolin_How_to_Evaluate_2014_CVPR_paper.pdf)
+* [Structure-measure: A New Way to Evaluate Foreground Maps](https://arxiv.org/pdf/1708.00786.pdf)
+* [Enhanced-alignment Measure for Binary Foreground Map Evaluation](https://arxiv.org/pdf/1805.10421.pdf)
 
 # citation
 Paper
