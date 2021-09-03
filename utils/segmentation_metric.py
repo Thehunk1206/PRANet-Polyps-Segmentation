@@ -70,10 +70,16 @@ def iou_metric(y_mask: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
 
     return iou
 
+def MAE(y_mask: tf.Tensor, y_pred: tf.Tensor):
+    return tf.reduce_mean(tf.abs(y_pred - y_mask))
+
 # All other metric (wFb, Sα, Emaxφ, MAE)
 
-
 class WFbetaMetric(object):
+    '''
+    Rerefence https://github.com/DengPingFan/PraNet/tree/master/eval
+    The following metric is from paper: How to Evaluate Foreground Maps? (CVPR2014)
+    '''
     def __init__(self, beta: int = 1) -> None:
         super().__init__()
         self.beta = beta
@@ -118,10 +124,6 @@ class WFbetaMetric(object):
         return self.kernel_2d
 
     def __call__(self, y_mask: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
-        '''
-        Rerefence https://github.com/DengPingFan/PraNet/tree/master/eval
-        The following metric is from paper: How to Evaluate Foreground Maps? (CVPR2014)
-        '''
         assert y_pred.ndim == y_mask.ndim and y_pred.shape == y_mask.shape
         y_mask = tf.squeeze(y_mask)  # (b,h,w,c) => (h,w)
         y_pred = tf.squeeze(y_pred)  # (b,h,w,c) => (h,w)
@@ -159,6 +161,7 @@ class WFbetaMetric(object):
 
 class SMeasure(object):
     '''
+    Rerefence https://github.com/DengPingFan/PraNet/tree/master/eval
     Structure-measure: A new way to evaluate foreground maps (ICCV 2017)
     '''
     def __init__(self, alpha: float = 0.5) -> None:
@@ -275,7 +278,63 @@ class SMeasure(object):
         return score
 
 
+class Emeasure(object):
+    ''' 
+    Enhanced-alignment Measure for Binary Foreground Map Evaluation (IJCAI 2018)
+    Reference: https://github.com/Xiaoqi-Zhao-DLUT/DANet-RGBD-Saliency/blob/master/saliency_metric.py
+    '''
+    def __init__(self):
+        pass
 
+    def AlignmentTerm(self, dFM, dy_mask):
+        mu_FM = np.mean(dFM)
+        mu_y_mask = np.mean(dy_mask)
+        align_FM = dFM - mu_FM
+        align_y_mask = dy_mask - mu_y_mask
+        align_Matrix = 2. * (align_y_mask * align_FM) / \
+            (align_y_mask * align_y_mask + align_FM * align_FM + 1e-8)
+        return align_Matrix
+
+    def EnhancedAlignmentTerm(self, align_Matrix):
+        enhanced = np.power(align_Matrix + 1, 2) / 4
+        return enhanced
+
+    def __call__(self, y_mask: tf.Tensor, y_pred: tf.Tensor):
+        assert y_pred.ndim == y_mask.ndim and y_pred.shape == y_mask.shape
+        y_mask = tf.squeeze(y_mask)  # (b,h,w,c) => (h,w)
+        y_pred = tf.squeeze(y_pred)  # (b,h,w,c) => (h,w)
+        y_pred = tf.cast(tf.greater(y_pred, 0.5), dtype=tf.float32)
+        y_mask = tf.cast(tf.greater(y_mask, 0.5), dtype=tf.float32)
+
+        y_mask = y_mask.numpy()
+        y_pred = y_pred.numpy()
+
+        th = 2 * y_pred.mean()
+        if th > 1:
+            th = 1
+        FM = np.zeros(y_mask.shape)
+        FM[y_pred >= th] = 1
+        FM = np.array(FM, dtype=bool)
+        y_mask = np.array(y_mask, dtype=bool)
+        dFM = np.double(FM)
+
+        if (sum(sum(np.double(y_mask))) == 0):
+            enhanced_matrix = 1.0-dFM
+        elif (sum(sum(np.double(~y_mask))) == 0):
+            enhanced_matrix = dFM
+        else:
+            dy_mask = np.double(y_mask)
+            align_matrix = self.AlignmentTerm(dFM, dy_mask)
+            enhanced_matrix = self.EnhancedAlignmentTerm(align_matrix)
+
+        [w, h] = np.shape(y_mask)
+        score = sum(sum(enhanced_matrix)) / (w * h - 1 + 1e-8)
+
+        return tf.cast(score, dtype=tf.float32)
+
+
+
+# test 
 if __name__ == "__main__":
     from visualize_bce_iou_loss_weigth import read_mask
 
@@ -287,13 +346,21 @@ if __name__ == "__main__":
 
     wFb_metric = WFbetaMetric()
     smeasure_metric = SMeasure()
+    emeasure_metric = Emeasure()
+
 
     dice_metric = dice_coef(y_mask, y_pred)
     iou = iou_metric(y_mask, y_pred)
     wfb = wFb_metric(y_mask=y_mask, y_pred=y_pred)
     smeasure = smeasure_metric(y_mask=y_mask, y_pred=y_pred)
+    emeasure = emeasure_metric(y_mask=y_mask, y_pred=y_pred)
+    mae = MAE(y_mask=y_mask, y_pred=y_mask)
 
     tf.print(f"dice coef: {dice_metric}")
     tf.print(f"IoU: {iou}")
     tf.print(f"wFbeta: {wfb}")
     tf.print(f"Smeasure: {smeasure}")
+    tf.print(f"Emeasure: {emeasure}")
+    tf.print(f"mae: {mae}")
+
+
