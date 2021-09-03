@@ -21,45 +21,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
+
 import tensorflow as tf
 import numpy as np
-from scipy.ndimage import convolve, distance_transform_edt as dtedt
-
-class WBCEDICELoss(tf.keras.losses.Loss):
-    def __init__(self, name: str,):
-        super(WBCEDICELoss, self).__init__(name=name)
-
-    @tf.function
-    def call(self, y_mask: tf.Tensor, y_pred: tf.Tensor):
-        bce_iou_weights = 1 + 5 * \
-            tf.abs(tf.nn.avg_pool2d(y_mask, ksize=31,
-                   strides=1, padding="SAME")-y_mask)
-
-        # weighted BCE loss
-        bce_loss = tf.keras.losses.BinaryCrossentropy(
-            from_logits=True)(y_mask, y_pred)
-        wbce_loss = tf.reduce_sum(
-            bce_loss*bce_iou_weights, axis=(1, 2)) / tf.reduce_sum(bce_iou_weights, axis=(1, 2))
-
-        # weighted DICE loss
-        y_pred = tf.sigmoid(y_pred)
-        y_pred = tf.cast(tf.math.greater(y_pred, 0.5), tf.float32)
-
-        inter = tf.reduce_sum((y_pred * y_mask) * bce_iou_weights, axis=(1, 2))
-        union = tf.reduce_sum((y_pred + y_mask) * bce_iou_weights, axis=(1, 2))
-        wdice_loss = 1 - ((2*inter) / union+1e-15)
-
-        weighted_bce_dice_loss = tf.reduce_mean(
-            wbce_loss + wdice_loss)
-        return weighted_bce_dice_loss
-
-    def get_config(self):
-        return super().get_config()
-
-    @classmethod
-    def from_config(cls, config):
-        return super().from_config(config)
-
+from scipy.ndimage import convolve, center_of_mass, distance_transform_edt as dtedt
 
 
 def dice_coef(y_mask: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
@@ -76,13 +41,14 @@ def dice_coef(y_mask: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
     y_mask = tf.cast(tf.math.greater(y_mask, 0.5), tf.float32)
 
     intersection = tf.reduce_sum(
-        tf.multiply(y_mask, y_pred), axis=( 1, 2, 3))
+        tf.multiply(y_mask, y_pred), axis=(1, 2, 3))
     union = tf.reduce_sum((y_mask + y_pred), axis=(1, 2, 3)) + smooth
     dice = tf.reduce_mean(((2*intersection+smooth) / union))
 
     return dice
 
-def iou_metric(y_mask: tf.Tensor, y_pred: tf.Tensor)-> tf.Tensor:
+
+def iou_metric(y_mask: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
     '''
     Intersection over Union measure
     args:   y_mask->tf.Tensor  Ground truth Map
@@ -95,19 +61,20 @@ def iou_metric(y_mask: tf.Tensor, y_pred: tf.Tensor)-> tf.Tensor:
     y_pred = tf.cast(tf.greater(y_pred, 0.5), dtype=tf.float32)
     y_mask = tf.cast(tf.greater(y_mask, 0.5), dtype=tf.float32)
 
-
     intersection = tf.reduce_sum(
-        tf.multiply(y_mask, y_pred), axis=( 1, 2))
-    
+        tf.multiply(y_mask, y_pred), axis=(1, 2))
+
     union = tf.reduce_sum((y_mask + y_pred), axis=(1, 2)) + smooth
 
     iou = tf.reduce_mean((intersection)/(union-intersection))
 
     return iou
 
-# All other metric (wFb, Sα, Emaxφ, MAE) 
+# All other metric (wFb, Sα, Emaxφ, MAE)
+
+
 class WFbetaMetric(object):
-    def __init__(self, beta:int = 1) -> None:
+    def __init__(self, beta: int = 1) -> None:
         super().__init__()
         self.beta = beta
         self.eps = 1e-12
@@ -150,15 +117,14 @@ class WFbetaMetric(object):
         self.kernel_2d *= 1.0/self.kernel_2d.max()
         return self.kernel_2d
 
-
     def __call__(self, y_mask: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
         '''
-        Rerefence https://github.com/Xiaoqi-Zhao-DLUT/DANet-RGBD-Saliency/blob/master/saliency_metric.py
+        Rerefence https://github.com/DengPingFan/PraNet/tree/master/eval
         The following metric is from paper: How to Evaluate Foreground Maps? (CVPR2014)
         '''
         assert y_pred.ndim == y_mask.ndim and y_pred.shape == y_mask.shape
-        y_mask = tf.squeeze(y_mask)
-        y_pred = tf.squeeze(y_pred)
+        y_mask = tf.squeeze(y_mask)  # (b,h,w,c) => (h,w)
+        y_pred = tf.squeeze(y_pred)  # (b,h,w,c) => (h,w)
 
         y_pred = tf.cast(tf.greater(y_pred, 0.5), dtype=tf.int32)
         y_mask = tf.cast(tf.greater(y_mask, 0.5), dtype=tf.int32)
@@ -166,7 +132,7 @@ class WFbetaMetric(object):
         y_mask = y_mask.numpy()
 
         Dst, Idxt = dtedt(y_mask == 0, return_indices=True)
-        
+
         E = np.abs(y_pred - y_mask)
 
         Et = np.copy(E)
@@ -176,7 +142,8 @@ class WFbetaMetric(object):
         EA = convolve(Et, weights=K, mode='constant', cval=0)
         MIN_E_EA = np.where(y_mask & (EA < E), EA, E)
 
-        B = np.where(y_mask == 0, 2 - np.exp(np.log(0.5) / 5 * Dst), np.ones_like(y_mask))
+        B = np.where(y_mask == 0, 2 - np.exp(np.log(0.5) /
+                     5 * Dst), np.ones_like(y_mask))
         Ew = MIN_E_EA * B
 
         TPw = np.sum(y_mask) - np.sum(Ew[y_mask == 1])
@@ -187,31 +154,146 @@ class WFbetaMetric(object):
 
         wfb = (1 + self.beta) * R * P / (self.eps + R + self.beta * P)
 
-        return wfb
+        return tf.cast(wfb, dtype=tf.float32)
 
-#test
+
+class SMeasure(object):
+    '''
+    Structure-measure: A new way to evaluate foreground maps (ICCV 2017)
+    '''
+    def __init__(self, alpha: float = 0.5) -> None:
+        super().__init__()
+        self.alpha = alpha
+    
+    def _object(self, inp1:np.ndarray, inp2:np.ndarray)->tf.Tensor:
+        '''
+        Computes BG and FG comparison of GT and SM
+        '''
+        x = np.mean(inp1[inp2])
+        sigma_x = np.std(inp1[inp2])
+        score = 2 * x / (x**2 + 1 + sigma_x + 1e-8)
+        return tf.cast(score,dtype=tf.float32)
+
+    def s_object(self, SM: tf.Tensor, GT: tf.Tensor)->tf.Tensor:
+        '''
+        Computes similarity between GT and SM at object level
+        '''
+        fg = SM * GT
+        bg = (1 - SM) * (1 - GT)
+
+        u = tf.reduce_mean(GT)
+        # converting GT to logical type(i.e bool type)
+        GT = tf.cast(GT, dtype=tf.bool)
+        return u * self._object(fg.numpy(), GT.numpy()) + (1 - u) * self._object(bg.numpy(), tf.logical_not(GT.numpy()))
+
+    def _ssim(self, SM: tf.Tensor, GT: tf.Tensor):
+        h, w = SM.shape
+        N = h * w
+
+        x = tf.reduce_mean(SM)
+        y = tf.reduce_mean(GT)
+
+        sigma_x = tf.math.reduce_variance(SM)
+        sigma_y = tf.math.reduce_variance(GT)
+        sigma_xy = tf.reduce_sum((SM - x) * (GT - y)) / (N - 1)
+
+        alpha = 4 * x * y * sigma_xy
+        beta = (x * x + y * y) * (sigma_x + sigma_y)
+
+        if alpha != 0:
+            score = alpha / (beta + 1e-8)
+        elif alpha == 0 and beta == 0:
+            score = 1
+        else:
+            score = 0
+
+        return score
+
+    def _divideGT(self, GT: tf.Tensor, x: int, y: int) -> tuple:
+        # get H.W and area of GT
+        h, w = GT.shape
+        area = h*w
+        # divide GT into four blocks
+        UL = GT[0:y, 0:x]
+        UR = GT[0:y, x:w]
+        LL = GT[y:h, 0:x]
+        LR = GT[y:h, x:w]
+
+        # calculate weigths i.e  area_of_blocks/area_of_GT
+        w1 = (x * y) / area
+        w2 = y * (w - x) / area
+        w3 = (h - y) * x / area
+        w4 = (h - y) * (w - x) / area
+
+        return UL, UR, LL, LR, w1, w2, w3, w4
+
+    def _divideSM(self, SM: tf.Tensor, x: int, y: int) -> tuple:
+        # get H.W and area of SM
+        h, w = SM.shape
+        area = h*w
+        # divide SM into four blocks
+        UL = SM[0:y, 0:x]
+        UR = SM[0:y, x:w]
+        LL = SM[y:h, 0:x]
+        LR = SM[y:h, x:w]
+
+        return UL, UR, LL, LR
+
+    def s_region(self, y_mask: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
+        '''
+        Calculates Region aware structural similarity 
+        '''
+        # get the centre of mass of y_mask
+        [y, x] = center_of_mass(y_mask.numpy())
+        x = int(round(x)) + 1
+        y = int(round(x)) + 1
+
+        gt1, gt2, gt3, gt4, w1, w2, w3, w4 = self._divideGT(
+            GT=y_mask, x=x, y=y)
+        sm1, sm2, sm3, sm4 = self._divideSM(SM=y_pred, x=x, y=y)
+
+        score1 = self._ssim(sm1, gt1)
+        score2 = self._ssim(sm2, gt2)
+        score3 = self._ssim(sm3, gt3)
+        score4 = self._ssim(sm4, gt4)
+
+        return w1 * score1 + w2 * score2 + w3 * score3 + w4 * score4
+
+    def __call__(self, y_mask: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
+        assert y_pred.ndim == y_mask.ndim and y_pred.shape == y_mask.shape
+        y_mask = tf.squeeze(y_mask)  # (b,h,w,c) => (h,w)
+        y_pred = tf.squeeze(y_pred)  # (b,h,w,c) => (h,w)
+        y_pred = tf.cast(tf.greater(y_pred, 0.5), dtype=tf.float32)
+        y_mask = tf.cast(tf.greater(y_mask, 0.5), dtype=tf.float32)
+        y = tf.reduce_mean(y_mask)
+        if y == 0:
+            score = 1 - tf.reduce_mean(y_pred)
+        elif y == 1:
+            score = tf.reduce_mean(y_pred)
+        else:
+            score = self.alpha * self.s_object(y_pred, y_mask) + (1 - self.alpha) * self.s_region(y_mask=y_mask,y_pred=y_pred)
+        return score
+
+
+
 if __name__ == "__main__":
     from visualize_bce_iou_loss_weigth import read_mask
 
     path_to_mask1 = "polyps_dataset/masks/cjxn4fm0wg1cn0738rvy81d2v.jpg"
     path_to_mask2 = "polyps_dataset/masks/cju0qkwl35piu0993l0dewei2.jpg"
 
-    loss_w_bce_dice = WBCEDICELoss(name='structure_loss')
-    wFb_metric = WFbetaMetric()
-
     y_mask = read_mask(path_to_mask1)
     y_pred = read_mask(path_to_mask2)
 
-    # y_mask = tf.random.normal([8, 352, 352, 1])
-    # y_pred = tf.random.normal([8, 352, 352, 1])
+    wFb_metric = WFbetaMetric()
+    smeasure_metric = SMeasure()
 
-    total_w_bce_dice_loss = loss_w_bce_dice(y_mask, y_pred)
     dice_metric = dice_coef(y_mask, y_pred)
     iou = iou_metric(y_mask, y_pred)
     wfb = wFb_metric(y_mask=y_mask, y_pred=y_pred)
+    smeasure = smeasure_metric(y_mask=y_mask, y_pred=y_pred)
 
-    tf.print(f"w_bce_dice_loss: {total_w_bce_dice_loss}")
     tf.print(f"dice coef: {dice_metric}")
     tf.print(f"IoU: {iou}")
     tf.print(f"wFbeta: {wfb}")
-
+    tf.print(f"Smeasure: {smeasure}")

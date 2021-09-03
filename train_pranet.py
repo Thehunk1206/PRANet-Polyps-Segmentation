@@ -30,7 +30,7 @@ import sys
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-from utils.losses_and_metrics import WBCEDICELoss
+from utils.losses import WBCEDICELoss
 from utils.dataset import TfdataPipeline
 from model.PRA_net import PRAnet
 import tensorflow as tf

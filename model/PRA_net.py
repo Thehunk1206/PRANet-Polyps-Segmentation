@@ -29,7 +29,7 @@ from model.ra_module import ReverseAttention
 from model.partial_decoder import PartialDecoder
 from model.rfb import RFB
 from model.backbone import FE_backbone
-from utils.losses_and_metrics import dice_coef, iou_metric
+from utils.segmentation_metric import dice_coef, iou_metric
 
 
 class PRAnet(tf.keras.Model):

@@ -22,18 +22,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
 
+from utils.dataset import TfdataPipeline
+from utils.segmentation_metric import dice_coef, iou_metric, WFbetaMetric, SMeasure
+from tensorflow.python.data.ops.dataset_ops import DatasetV2
+from tensorflow.keras import models
+import tensorflow as tf
+from time import time
+from tqdm import tqdm
+import argparse
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-
-import argparse
-from tqdm import tqdm
-from time import time
-
-import tensorflow as tf
-from tensorflow.keras import models
-from tensorflow.python.data.ops.dataset_ops import DatasetV2
-from utils.losses_and_metrics import dice_coef, iou_metric, WFbetaMetric
-from utils.dataset import TfdataPipeline
 
 
 def get_model(model_path: str):
@@ -50,7 +48,7 @@ def get_model(model_path: str):
     return model
 
 
-def datapipeline(dataset_path: str, imgsize:int = 352) -> DatasetV2:
+def datapipeline(dataset_path: str, imgsize: int = 352) -> DatasetV2:
     assert isinstance(dataset_path, str)
 
     tfpipeline = TfdataPipeline(
@@ -61,10 +59,10 @@ def datapipeline(dataset_path: str, imgsize:int = 352) -> DatasetV2:
 
 
 def run_test(
-    model_path:str,
-    imgsize:int = 352,
-    dataset_path:str='polyps_dataset/',
-    threshold:float = 0.5
+    model_path: str,
+    imgsize: int = 352,
+    dataset_path: str = 'polyps_dataset/',
+    threshold: float = 0.5
 ):
     assert os.path.exists(model_path)
     assert os.path.exists(dataset_path)
@@ -75,10 +73,12 @@ def run_test(
 
     # initialize metrics
     wfb_metric = WFbetaMetric()
+    smeasure_metric = SMeasure()
     # collect metric for individual test data to average it later
     dice_coefs = []
     ious = []
     wfbs = []
+    smeasures = []
     runtimes = []
 
     for (image, mask) in tqdm(test_data, desc='Testing..', unit='steps', colour='green'):
@@ -94,22 +94,25 @@ def run_test(
         dice = dice_coef(y_mask=mask, y_pred=final_out)
         iou = iou_metric(y_mask=mask, y_pred=final_out)
         wfb = wfb_metric(y_mask=mask, y_pred=final_out)
+        smeasure = smeasure_metric(y_mask=mask, y_pred=final_out)
         dice_coefs.append(dice)
         ious.append(iou)
         wfbs.append(wfb)
+        smeasures.append(smeasure)
         runtimes.append(total_time)
 
     mean_dice = sum(dice_coefs)/len(dice_coefs)
     mean_iou = sum(ious)/len(ious)
     mean_wfb = sum(wfbs)/len(wfbs)
-    mean_runtime = sum(runtimes[3:])/ len(runtimes[3:])
+    mean_smeasure = sum(smeasures)/len(smeasures)
+    mean_runtime = sum(runtimes[3:]) / len(runtimes[3:])
     tf.print(
-            f"Average runtime of model: {mean_runtime}ms \n",
-            f"Mean IoU: {mean_iou}\n"
-            f"Mean Dice coef: {mean_dice}\n",
-            f"Mean wfb: {mean_wfb}"
-            "NOTE: The runtime of model can be high at first run as it \ntake time to cache the data in memory.\ntry to run the script again without closing the session"
-        )
+        f"Average runtime of model: {mean_runtime}ms \n",
+        f"Mean IoU: {mean_iou}\n"
+        f"Mean Dice coef: {mean_dice}\n",
+        f"Mean wfb: {mean_wfb}\n",
+        f"Mean Smeasure: {mean_smeasure}\n",
+    )
 
 
 if __name__ == "__main__":
@@ -134,4 +137,3 @@ if __name__ == "__main__":
         dataset_path=opt.data_path,
         threshold=opt.threshold
     )
-    
