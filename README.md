@@ -178,10 +178,11 @@ Model was trained on KVASIR SEG dataset which contains 1000 polyps images and 10
 ## Metrics Result Comparison between Original Implementation(Paper) and My Implementation(Tensorflow)
 *Currently the model is only trained on Kvasir-SEG dataset. If anyone is interested, they can train the model on different dataset and share their results.*
 
-|                             | Dataset      |  mDice   |  mIoU   | wFb   |S-measure|E-measure| MAE |
-|-----------------------------|-------------:|---------:|--------:|------:|--------:|--------:|----:|
-| PraNet (Original)           | Kvasir-SEG   |   0.90   |  0.84   |  0.89 |   0.92  |  0.95   |0.030|
-| PraNet (My Implementation)  | Kvasir-SEG   |   0.87   |  0.79   |  0.86 |   0.88  |  0.93   |0.037|
+|                                       | Dataset      |  mDice   |  mIoU   | wFb   |S-measure|E-measure| MAE |
+|---------------------------------------|-------------:|---------:|--------:|------:|--------:|--------:|----:|
+| PraNet+Res2Net50 (Original)           | Kvasir-SEG   |   0.90   |  0.84   |  0.89 |   0.92  |  0.95   |0.030|
+| PraNet+resnet50 (My Implementation)   | Kvasir-SEG   |   0.87   |  0.79   |  0.86 |   0.88  |  0.93   |0.037|
+| PraNet+mobilenetv2 (My Implementation)| Kvasir-SEG   |   0.78   |  0.68   |  0.84 |   0.80  |  0.87   |0.056|
 
 *Note: The results of My Implementation and original implementation differs because of training strategy, But overall the proposed architecture is SOTA and can converge way too fast by yielding better results.*
 
